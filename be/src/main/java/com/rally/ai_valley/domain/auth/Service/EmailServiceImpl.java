@@ -29,9 +29,6 @@ public class EmailServiceImpl implements EmailService {
     public void sendHtmlEmail(String emailAddr, String verificationCode) {
         MimeMessage message = mailSender.createMimeMessage();
         try {
-            log.info("Sender email address: '{}'", serverMail);
-            log.info("Recipient email address: '{}'", emailAddr);
-
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             // Thymeleaf

@@ -4,103 +4,76 @@
     <title th:text="${subject}"></title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <style type="text/css">
-        /* Basic Reset */
-        body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-        table { border-collapse: collapse; }
-        td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-        p { display: block; margin: 10px 0; }
-
-        /* Main Styles */
-        .email-body {
-            background-color: #f4f4f4;
-            padding: 20px 0;
-            font-family: sans-serif; /* 일반적인 웹 폰트 사용 */
-            color: #333333;
-            line-height: 1.6;
-        }
-
-        .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden; /* Ensures border-radius works */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .content-section {
-            padding: 30px;
-        }
-
-        .verification-code-box {
-            display: inline-block; /* Or use table cell */
-            padding: 15px 25px;
-            margin: 20px 0;
-            background-color: #eeeeee;
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            border-radius: 4px;
-            border: 1px dashed #cccccc;
-            word-break: break-all; /* 긴 코드도 잘리지 않도록 */
-        }
-
-        .footer {
-            padding: 20px 30px;
-            font-size: 12px;
-            color: #777777;
-            text-align: center;
-            border-top: 1px solid #eeeeee;
-            margin-top: 20px;
-        }
-
-        /* Responsive adjustments */
-        @media only screen and (max-width: 600px) {
-            .email-container {
-                width: 100% !important;
-                border-radius: 0 !important;
-            }
-            .content-section {
-                padding: 20px !important;
-            }
-            .verification-code-box {
-                font-size: 20px !important;
-                padding: 10px 20px !important;
-            }
-            .footer {
-                padding: 15px 20px !important;
-            }
-        }
-    </style>
+    <!--[if mso]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+    </xml>
+    <![endif]-->
 </head>
-<body class="email-body">
-
-<table role="presentation" class="email-container" align="center" width="100%" cellspacing="0" cellpadding="0" border="0">
+<body style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; height: 100%; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; line-height: 1.6; background-color: #f7f7f7;">
+<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
     <tr>
-        <td>
-            <table role="presentation" class="content-section" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <td align="center" style="padding: 30px 15px;">
+            <!-- 메인 이메일 컨테이너 -->
+            <table role="presentation" width="100%" style="max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);">
+                <!-- 헤더 섹션 -->
                 <tr>
-                    <td>
-                        <p>안녕하세요!</p>
-                        <p>회원가입을 완료하시려면 이메일 주소 인증이 필요합니다.</p>
-                        <p>아래 인증 코드를 입력하여 이메일 주소를 인증해주세요.</p>
-
-                        <div style="text-align: center;">
-                                <span class="verification-code-box" th:text="${verificationCode}" style="display: inline-block; padding: 15px 25px; margin: 20px auto; background-color: #eeeeee; font-size: 24px; font-weight: bold; text-align: center; border-radius: 4px; border: 1px dashed #cccccc; word-break: break-all;">
-                                    </span>
-                        </div>
-                        <p>본인이 요청하지 않았다면 이 이메일을 무시하세요.</p>
-                        <p>감사합니다.</p>
-                        <p>AI Valley</p>
+                    <td align="center" style="background-color: #4E6BFF; padding: 25px 30px; text-align: center;">
+                        <h1 style="font-size: 24px; font-weight: 700; color: #ffffff; margin: 0;">AI Valley</h1>
                     </td>
                 </tr>
-            </table>
-            <table role="presentation" class="footer" width="100%" cellspacing="0" cellpadding="0" border="0">
+
+                <!-- 콘텐츠 섹션 -->
                 <tr>
-                    <td>
-                        <p>&copy; 2025 AI Valley. All rights reserved.</p>
+                    <td style="padding: 35px 30px;">
+                        <p style="font-size: 17px; font-weight: 500; margin-bottom: 16px; margin-top: 0;">안녕하세요!</p>
+                        <p style="font-size: 15px; color: #555555; margin-bottom: 8px;">AI Valley 회원가입을 위한 이메일 인증을 진행해주세요.</p>
+                        <p style="font-size: 15px; color: #555555; margin-bottom: 8px;">아래의 인증 코드를 입력하시면 이메일 인증이 완료됩니다.</p>
+
+                        <!-- 인증 코드 박스 -->
+                        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td align="center" style="padding: 30px 0;">
+                                    <table role="presentation" border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                            <td align="center" style="background-color: #f3f4ff; border: 1px dashed #c7d0ff; border-radius: 6px; padding: 18px 32px;">
+                                                <span th:text="${verificationCode}" style="font-size: 26px; font-weight: 700; letter-spacing: 2px; color: #4E6BFF; word-break: break-all;"></span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="font-size: 14px; color: #777777; font-style: italic; margin-top: 20px;">본인이 요청하지 않은 이메일이라면 무시하셔도 됩니다.</p>
+
+                        <!-- 구분선 -->
+                        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td style="padding: 25px 0;">
+                                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                            <td style="border-bottom: 1px solid #eeeeee;"></td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="font-weight: 500; margin-top: 0; margin-bottom: 5px;">감사합니다.</p>
+                        <p style="font-weight: 500; margin-top: 0;">AI Valley 팀 드림</p>
+                    </td>
+                </tr>
+
+                <!-- 푸터 섹션 -->
+                <tr>
+                    <td style="background-color: #fafafa; padding: 22px 30px; font-size: 13px; color: #888888; text-align: center;">
+                        <p style="margin: 5px 0;">&copy; 2025 AI Valley. All rights reserved.</p>
+<!--                        <p style="margin: 5px 0;">주소: 서울특별시 AI 밸리로 123길 45</p>-->
+                        <p style="margin: 5px 0;">본 이메일은 발신 전용입니다. 문의사항은 <a href="mailto:support@aivalley.com" style="color: #4E6BFF; text-decoration: underline;">support@aivalley.com</a>으로 연락주세요.</p>
                     </td>
                 </tr>
             </table>
