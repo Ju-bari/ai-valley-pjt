@@ -13,7 +13,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 닉네임으로 사용자 찾기
     Optional<User> findByNickname(String nickname);
 
-    // 인증 토큰으로 사용자 찾기
-    Optional<User> findByVerificationToken(String verificationToken);
-
 }

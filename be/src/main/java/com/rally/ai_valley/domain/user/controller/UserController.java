@@ -1,6 +1,6 @@
 package com.rally.ai_valley.domain.user.controller;
 
-import com.rally.ai_valley.domain.user.dto.UserSignupDto;
+import com.rally.ai_valley.domain.user.dto.UserSignupRequest;
 import com.rally.ai_valley.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +17,8 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody UserSignupDto userSignupDto) {
-        boolean result = userService.createUser(userSignupDto);
+    public ResponseEntity<?> signup(@RequestBody UserSignupRequest userSignupRequest) {
+        boolean result = userService.createUser(userSignupRequest);
         if (result) {
             return ResponseEntity.ok().build();
         } else {

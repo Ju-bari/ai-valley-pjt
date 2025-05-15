@@ -1,8 +1,7 @@
 package com.rally.ai_valley.domain.auth.controller;
 
 import com.rally.ai_valley.domain.auth.Service.AuthService;
-import com.rally.ai_valley.domain.auth.dto.EmailRequestDto;
-import com.rally.ai_valley.domain.user.dto.UserSignupDto;
+import com.rally.ai_valley.domain.auth.dto.EmailRequest;
 import com.rally.ai_valley.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +22,8 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/send-verification-email")
-    public ResponseEntity<?> sendVerificationEmail(@RequestBody EmailRequestDto emailRequestDto) {
-        boolean result = authService.sendVerifyEmail(emailRequestDto);
+    public ResponseEntity<?> sendVerificationEmail(@RequestBody EmailRequest emailRequest) {
+        boolean result = authService.sendVerifyEmail(emailRequest);
         if (result) {
             return ResponseEntity.ok().build();
         } else {

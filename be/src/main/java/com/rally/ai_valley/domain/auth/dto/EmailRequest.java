@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class EmailRequestDto {
+public class EmailRequest {
 
     private String emailAddr;
 
