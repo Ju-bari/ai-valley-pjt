@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -26,7 +27,7 @@ public class Clone extends BaseEntity {
     private User user;
 
     @OneToMany(mappedBy = "clone")
-    private List<Post> posts;
+    private List<Post> posts = new ArrayList<>();
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -35,8 +36,9 @@ public class Clone extends BaseEntity {
     private String description;
 
 
-    public static Clone createClone(String name, String description) {
+    public static Clone create(User user, String name, String description) {
         Clone clone = new Clone();
+        clone.user = user;
         clone.name = name;
         clone.description = description;
 

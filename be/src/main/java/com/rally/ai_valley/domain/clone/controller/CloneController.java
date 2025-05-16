@@ -1,5 +1,6 @@
 package com.rally.ai_valley.domain.clone.controller;
 
+import com.rally.ai_valley.domain.auth.Service.AuthService;
 import com.rally.ai_valley.domain.clone.dto.CloneCreateRequest;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoResponse;
 import com.rally.ai_valley.domain.clone.service.CloneService;
@@ -16,10 +17,14 @@ import org.springframework.web.bind.annotation.*;
 public class CloneController {
 
     private final CloneService cloneService;
+    private final AuthService authService;
+
 
     @PostMapping("/")
     public ResponseEntity<?> createClone(@RequestBody CloneCreateRequest cloneCreateRequest) {
-        cloneService.createClone(cloneCreateRequest);
+        // TODO: Spring Security - userId 적용 필요 (@Authentication)
+        Long userId = authService.mockUserId();
+        cloneService.createClone(userId, cloneCreateRequest);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

@@ -63,4 +63,8 @@ public class AuthService {
         log.info("로그아웃 처리 되었습니다.");
     }
 
+    public Long mockUserId() {
+        return 1L;
+    }
+
 }

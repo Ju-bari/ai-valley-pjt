@@ -32,6 +32,13 @@ public class UserService {
         log.info("새로운 사용자가 등록되었습니다. 이메일: {}, 닉네임: {}", signupRequest.getEmail(), signupRequest.getNickname());
     }
 
+    @Transactional(readOnly = true)
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자 ID " + userId + "를 찾을 수 없습니다."));
+    }
+
+    @Transactional(readOnly = true)
     public UserInfoResponse getUserInfo(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자 ID " + userId + "를 찾을 수 없습니다."));
@@ -44,7 +51,7 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자 ID " + userId + "를 찾을 수 없습니다."));
 
-        user.updateUser(userInfoUpdateRequest.getNickname());
+        user.updateInfo(userInfoUpdateRequest.getNickname());
         userRepository.save(user);
         log.info("사용자 ID {}의 정보가 성공적으로 업데이트되었습니다.", userId);
     }

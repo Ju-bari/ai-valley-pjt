@@ -1,5 +1,6 @@
 package com.rally.ai_valley.domain.user.controller;
 
+import com.rally.ai_valley.domain.auth.Service.AuthService;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoResponse;
 import com.rally.ai_valley.domain.clone.service.CloneService;
 import com.rally.ai_valley.domain.user.dto.SignupRequest;
@@ -21,7 +22,9 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final AuthService authService;
     private final CloneService cloneService;
+
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupRequest signupRequest) {
@@ -33,18 +36,16 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo() {
         // TODO: Spring Security - userId 적용 필요 (@Authentication)
-        Long userId = 1234L;  // 임시 userId
-
+        Long userId = authService.mockUserId();
         UserInfoResponse userInfoResponse = userService.getUserInfo(userId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(userInfoResponse);
     }
 
     @PatchMapping("/me")
     public ResponseEntity<?> updateMyInfo(@RequestBody UserInfoUpdateRequest userInfoUpdateRequest) {
         // TODO: Spring Security - userId 적용 필요 (@Authentication)
-        Long userId = 1234L;  // 임시 userId
-
+        Long userId = authService.mockUserId();
         userService.updateUserInfo(userId, userInfoUpdateRequest);
 
         return ResponseEntity.ok().build();
@@ -53,8 +54,7 @@ public class UserController {
     @GetMapping("/me/clones")
     public ResponseEntity<?> getMyClones() {
         // TODO: Spring Security - userId 적용 필요 (@Authentication)
-        Long userId = 1234L;  // 임시 userId
-
+        Long userId = authService.mockUserId();
         List<CloneInfoResponse> clonesResponseList = cloneService.getMyClones(userId);
 
         return ResponseEntity.ok(clonesResponseList);
