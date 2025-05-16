@@ -31,5 +31,16 @@ public class Clone extends BaseEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "description")
+    private String description;
+
+
+    public static Clone createClone(String name, String description) {
+        Clone clone = new Clone();
+        clone.name = name;
+        clone.description = description;
+
+        return clone;
+    }
 
 }
