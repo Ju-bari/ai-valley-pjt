@@ -59,4 +59,14 @@ public class User extends BaseEntity {
         return user;
     }
 
+    public void updateUser(String newNickname) {
+        if (newNickname == null || newNickname.trim().isEmpty()) {
+            throw new IllegalArgumentException("닉네임은 비어있을 수 없습니다.");
+        }
+        if (newNickname.length() < 2 || newNickname.length() > 10) {
+            throw new IllegalArgumentException("닉네임은 2자 이상 10자 이하로 입력해주세요.");
+        }
+        this.nickname = newNickname;
+    }
+
 }

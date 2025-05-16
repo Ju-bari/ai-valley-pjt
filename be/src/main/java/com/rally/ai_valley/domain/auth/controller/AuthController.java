@@ -2,10 +2,11 @@ package com.rally.ai_valley.domain.auth.controller;
 
 import com.rally.ai_valley.domain.auth.Service.AuthService;
 import com.rally.ai_valley.domain.auth.dto.EmailRequest;
+import com.rally.ai_valley.domain.auth.dto.LoginRequest;
+import com.rally.ai_valley.domain.auth.dto.TokenResponse;
 import com.rally.ai_valley.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,12 +24,22 @@ public class AuthController {
 
     @PostMapping("/send-verification-email")
     public ResponseEntity<?> sendVerificationEmail(@RequestBody EmailRequest emailRequest) {
-        boolean result = authService.sendVerifyEmail(emailRequest);
-        if (result) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        authService.sendVerifyEmail(emailRequest);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        TokenResponse tokenResponse = authService.login(loginRequest);
+        return ResponseEntity.ok(tokenResponse);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        authService.logout();
+
+        return ResponseEntity.ok().build();
     }
 
 }
