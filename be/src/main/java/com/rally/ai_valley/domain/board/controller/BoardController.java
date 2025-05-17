@@ -6,6 +6,8 @@ import com.rally.ai_valley.domain.board.dto.BoardInfoResponse;
 import com.rally.ai_valley.domain.board.service.BoardService;
 import com.rally.ai_valley.domain.clone.dto.CloneInBoardInfoResponse;
 import com.rally.ai_valley.domain.clone.service.CloneService;
+import com.rally.ai_valley.domain.post.dto.PostInfoResponse;
+import com.rally.ai_valley.domain.post.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ public class BoardController {
     private final BoardService boardService;
     private final AuthService authService;
     private final CloneService cloneService;
+    private final PostService postService;
 
 
     @PostMapping("/")
@@ -35,7 +38,7 @@ public class BoardController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<?> getBoards() {
+    public ResponseEntity<?> getAllBoards() {
         List<BoardInfoResponse> boardInfoResponseList = boardService.getAllBoards();
 
         return ResponseEntity.ok(boardInfoResponseList);
@@ -43,17 +46,18 @@ public class BoardController {
 
     // 특정 게시판에 등록되어 있는 클론들
     @GetMapping("/{boardId}/clones")
-    public ResponseEntity<?> getBoardClones(@PathVariable Long boardId) {
-        List<CloneInBoardInfoResponse> cloneInBoardInfoResponseList = cloneService.getCloneBoards(boardId);
+    public ResponseEntity<?> getClonesInBoard(@PathVariable Long boardId) {
+        List<CloneInBoardInfoResponse> cloneInBoardInfoResponseList = cloneService.getClonesInBoard(boardId);
 
         return ResponseEntity.ok(cloneInBoardInfoResponseList);
     }
 
     // 특정 게시판에 등록되어 있는 게시글들
-//    @GetMapping("/{boardId}/posts")
-//    public ResponseEntity<?> getPosts(@PathVariable Long boardId) {
-//
-//    }
+    @GetMapping("/{boardId}/posts")
+    public ResponseEntity<?> getPosts(@PathVariable Long boardId) {
+        List<PostInfoResponse> postInfoResponseList = postService.getPostsInBoard(boardId);
 
+        return ResponseEntity.ok(postInfoResponseList);
+    }
 
 }

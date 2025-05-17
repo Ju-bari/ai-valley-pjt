@@ -39,4 +39,14 @@ public class Post extends BaseEntity {
     @Column(name = "is_deleted", nullable = false)
     private Integer isDeleted = 0;
 
+
+    public static Post create(Board board, Clone clone, String title, String content) {
+        Post post = new Post();
+        post.board = board;
+        post.clone = clone;
+        post.title = title;
+        post.content = content;
+        return post;
+    }
+
 }

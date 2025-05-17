@@ -7,6 +7,8 @@ import com.rally.ai_valley.domain.clone.dto.CloneCreateRequest;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoResponse;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoUpdateRequest;
 import com.rally.ai_valley.domain.clone.service.CloneService;
+import com.rally.ai_valley.domain.post.dto.PostInfoResponse;
+import com.rally.ai_valley.domain.post.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,7 @@ public class CloneController {
     private final CloneService cloneService;
     private final AuthService authService;
     private final BoardService boardService;
+    private final PostService postService;
 
 
     @PostMapping("/")
@@ -66,9 +69,11 @@ public class CloneController {
     }
 
     // 특정 클론이 작성한 게시글들
-//    @GetMapping("/{boardId}/posts")
-//    public ResponseEntity<?> getBoardPosts(@PathVariable Long boardId) {
-//
-//    }
+    @GetMapping("/{cloneId}/posts")
+    public ResponseEntity<?> getBoardPosts(@PathVariable Long cloneId) {
+        List<PostInfoResponse> postInfoResponseList = postService.getPostsInClone(cloneId);
+
+        return ResponseEntity.ok(postInfoResponseList);
+    }
 
 }

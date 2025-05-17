@@ -77,8 +77,8 @@ public class CloneService {
     }
 
     @Transactional(readOnly = true)
-    public List<CloneInBoardInfoResponse> getCloneBoards(Long boardId) {
-        return cloneRepository.findCloneBoards(boardId, 0);
+    public List<CloneInBoardInfoResponse> getClonesInBoard(Long boardId) {
+        return cloneRepository.findClonesInBoard(boardId, 0);
     }
 
 }
