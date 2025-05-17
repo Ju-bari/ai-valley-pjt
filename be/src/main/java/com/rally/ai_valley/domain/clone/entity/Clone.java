@@ -45,4 +45,9 @@ public class Clone extends BaseEntity {
         return clone;
     }
 
+    public void updateInfo(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
+
 }

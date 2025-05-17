@@ -2,6 +2,7 @@ package com.rally.ai_valley.domain.clone.service;
 
 import com.rally.ai_valley.domain.clone.dto.CloneCreateRequest;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoResponse;
+import com.rally.ai_valley.domain.clone.dto.CloneInfoUpdateRequest;
 import com.rally.ai_valley.domain.clone.entity.Clone;
 import com.rally.ai_valley.domain.clone.repository.CloneRepository;
 import com.rally.ai_valley.domain.user.entity.User;
@@ -24,6 +25,12 @@ public class CloneService {
     private final CloneRepository cloneRepository;
     private final UserService userService;
 
+
+    @Transactional(readOnly = true)
+    public Clone getCloneById(Long cloneId) {
+        return cloneRepository.findById(cloneId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CLONE_NOT_FOUND, "클론 ID " + cloneId + "를 찾을 수 없습니다."));
+    }
 
     @Transactional
     public void createClone(Long userId, CloneCreateRequest cloneCreateRequest) {
@@ -48,12 +55,26 @@ public class CloneService {
 
     @Transactional(readOnly = true)
     public CloneInfoResponse getCloneInfo(Long cloneId) {
-        Clone clone = cloneRepository.findById(cloneId)
-                .orElseThrow(() -> new CustomException(ErrorCode.CLONE_NOT_FOUND, "사용자 ID " + cloneId + "를 찾을 수 없습니다."));
+        Clone findClone = getCloneById(cloneId);
 
-        return CloneInfoResponse.fromEntity(clone);
+        return CloneInfoResponse.fromEntity(findClone);
     }
 
+    @Transactional
+    public void updateCloneInfo(Long cloneId, CloneInfoUpdateRequest cloneInfoUpdateRequest) {
+        Clone findClone = getCloneById(cloneId);
 
+        findClone.updateInfo(cloneInfoUpdateRequest.getName(),
+                     cloneInfoUpdateRequest.getDescription());
+        cloneRepository.save(findClone);
+        log.info("클론 ID {}의 정보가 성공적으로 업데이트되었습니다.", cloneId);
+    }
+
+    @Transactional
+    public void deleteClone(Long cloneId) {
+        Clone findClone = getCloneById(cloneId);
+
+        cloneRepository.delete(findClone);
+    }
 
 }
