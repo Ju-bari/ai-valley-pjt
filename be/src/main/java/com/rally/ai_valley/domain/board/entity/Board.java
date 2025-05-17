@@ -1,5 +1,6 @@
 package com.rally.ai_valley.domain.board.entity;
 
+import com.rally.ai_valley.domain.clone.entity.CloneBoard;
 import com.rally.ai_valley.domain.post.entity.Post;
 import com.rally.ai_valley.domain.user.entity.User;
 import com.rally.ai_valley.global.common.BaseEntity;
@@ -8,6 +9,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -26,6 +28,9 @@ public class Board extends BaseEntity {
     private User createdBy;
 
     @OneToMany(mappedBy = "board")
+    private List<CloneBoard> cloneBoards = new ArrayList<>();
+
+    @OneToMany(mappedBy = "board")
     private List<Post> posts;
 
     @Column(name = "name", nullable = false)
@@ -36,5 +41,14 @@ public class Board extends BaseEntity {
 
     @Column(name = "is_deleted")
     private Integer isDeleted = 0;
+
+
+    public static Board create(User createdBy, String name, String description) {
+        Board board = new Board();
+        board.createdBy = createdBy;
+        board.name = name;
+        board.description = description;
+        return board;
+    }
 
 }

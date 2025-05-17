@@ -1,5 +1,6 @@
 package com.rally.ai_valley.domain.clone.service;
 
+import com.rally.ai_valley.domain.clone.dto.CloneInBoardInfoResponse;
 import com.rally.ai_valley.domain.clone.dto.CloneCreateRequest;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoResponse;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoUpdateRequest;
@@ -41,7 +42,6 @@ public class CloneService {
                                     cloneCreateRequest.getDescription());
 
         cloneRepository.save(clone);
-        log.info("새로운 클론이 등록되었습니다. 이름: {}, 설명: {}", cloneCreateRequest.getName(), cloneCreateRequest.getDescription());
     }
 
     @Transactional(readOnly = true)
@@ -67,7 +67,6 @@ public class CloneService {
         findClone.updateInfo(cloneInfoUpdateRequest.getName(),
                      cloneInfoUpdateRequest.getDescription());
         cloneRepository.save(findClone);
-        log.info("클론 ID {}의 정보가 성공적으로 업데이트되었습니다.", cloneId);
     }
 
     @Transactional
@@ -75,6 +74,11 @@ public class CloneService {
         Clone findClone = getCloneById(cloneId);
 
         cloneRepository.delete(findClone);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CloneInBoardInfoResponse> getCloneBoards(Long boardId) {
+        return cloneRepository.findCloneBoards(boardId, 0);
     }
 
 }

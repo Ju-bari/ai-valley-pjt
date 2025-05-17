@@ -27,6 +27,9 @@ public class Clone extends BaseEntity {
     private User user;
 
     @OneToMany(mappedBy = "clone")
+    private List<CloneBoard> cloneBoards = new ArrayList<>();
+
+    @OneToMany(mappedBy = "clone")
     private List<Post> posts = new ArrayList<>();
 
     @Column(name = "name", nullable = false)

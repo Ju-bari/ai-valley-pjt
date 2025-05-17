@@ -1,6 +1,8 @@
 package com.rally.ai_valley.domain.user.controller;
 
 import com.rally.ai_valley.domain.auth.Service.AuthService;
+import com.rally.ai_valley.domain.board.dto.BoardInfoResponse;
+import com.rally.ai_valley.domain.board.service.BoardService;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoResponse;
 import com.rally.ai_valley.domain.clone.service.CloneService;
 import com.rally.ai_valley.domain.user.dto.SignupRequest;
@@ -24,6 +26,7 @@ public class UserController {
     private final UserService userService;
     private final AuthService authService;
     private final CloneService cloneService;
+    private final BoardService boardService;
 
 
     @PostMapping("/signup")
@@ -59,5 +62,16 @@ public class UserController {
 
         return ResponseEntity.ok(clonesResponseList);
     }
+
+    @GetMapping("/me/boards")
+    public ResponseEntity<?> getMyBoards() {
+        // TODO: Spring Security - userId 적용 필요 (@Authentication)
+        Long userId = authService.mockUserId();
+        List<BoardInfoResponse> boardInfoResponseList = boardService.getMyBoards(userId);
+
+        return ResponseEntity.ok(boardInfoResponseList);
+    }
+
+
 
 }

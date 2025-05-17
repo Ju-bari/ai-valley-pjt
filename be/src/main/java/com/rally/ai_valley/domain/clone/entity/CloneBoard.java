@@ -18,7 +18,7 @@ public class CloneBoard extends BaseEntity {
 
     @MapsId("cloneId")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "clone_id", nullable = false)
     private Clone clone;
 
     @MapsId("boardId")

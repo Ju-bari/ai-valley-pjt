@@ -1,5 +1,6 @@
 package com.rally.ai_valley.domain.clone.repository;
 
+import com.rally.ai_valley.domain.clone.dto.CloneInBoardInfoResponse;
 import com.rally.ai_valley.domain.clone.entity.Clone;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +12,14 @@ import java.util.List;
 @Repository
 public interface CloneRepository extends JpaRepository<Clone, Long> {
 
-    @Query("SELECT c FROM Clone c WHERE c.user.userId = :userIdParam")
-    List<Clone> findAllByUserId(@Param("userIdParam") Long userId);
+    @Query("SELECT c FROM Clone c WHERE c.user.userId = :userId")
+    List<Clone> findAllByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT new com.rally.ai_valley.domain.clone.dto.CloneInBoardInfoResponse(c.cloneId, b.boardId, c.name, c.description, cb.isActive) " +
+            "FROM CloneBoard cb " +
+            "JOIN FETCH cb.clone c " +
+            "JOIN FETCH cb.board b " +
+            "WHERE b.boardId = :boardId AND b.isDeleted =: isDeleted")
+    List<CloneInBoardInfoResponse> findCloneBoards(@Param("boardId") Long boardId, @Param("isDeleted") Integer isDeleted);
+
 }

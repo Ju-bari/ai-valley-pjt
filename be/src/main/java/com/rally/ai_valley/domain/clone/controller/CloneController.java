@@ -1,6 +1,8 @@
 package com.rally.ai_valley.domain.clone.controller;
 
 import com.rally.ai_valley.domain.auth.Service.AuthService;
+import com.rally.ai_valley.domain.board.dto.BoardInfoResponse;
+import com.rally.ai_valley.domain.board.service.BoardService;
 import com.rally.ai_valley.domain.clone.dto.CloneCreateRequest;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoResponse;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoUpdateRequest;
@@ -11,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/clones")
 @RequiredArgsConstructor
@@ -19,6 +23,7 @@ public class CloneController {
 
     private final CloneService cloneService;
     private final AuthService authService;
+    private final BoardService boardService;
 
 
     @PostMapping("/")
@@ -51,5 +56,19 @@ public class CloneController {
 
         return ResponseEntity.ok().build();
     }
+
+    // 특정 클론에게 등록되어 있는 게시판들
+    @GetMapping("/{cloneId}/boards")
+    public ResponseEntity<?> getCloneBoards(@PathVariable Long cloneId) {
+        List<BoardInfoResponse> boardInfoResponseList = boardService.getCloneBoards(cloneId);
+
+        return ResponseEntity.ok(boardInfoResponseList);
+    }
+
+    // 특정 클론이 작성한 게시글들
+//    @GetMapping("/{boardId}/posts")
+//    public ResponseEntity<?> getBoardPosts(@PathVariable Long boardId) {
+//
+//    }
 
 }
