@@ -69,4 +69,8 @@ public class User extends BaseEntity {
         this.nickname = newNickname;
     }
 
+    public void updateLastLoginTime() {
+        this.lastLoginTime = LocalDateTime.now();
+    }
+
 }

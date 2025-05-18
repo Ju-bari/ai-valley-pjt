@@ -39,6 +39,16 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public boolean isEmailDuplicate(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isNicknameDuplicate(String nickname) {
+        return userRepository.findByNickname(nickname).isPresent();
+    }
+
+    @Transactional(readOnly = true)
     public UserInfoResponse getUserInfo(Long userId) {
         User findUser = getUserById(userId);
 
