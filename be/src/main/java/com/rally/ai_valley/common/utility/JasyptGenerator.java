@@ -1,7 +1,6 @@
-package com.rally.ai_valley.global.util;
+package com.rally.ai_valley.common.utility;
 
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
-import org.springframework.beans.factory.annotation.Value;
 
 public class JasyptGenerator {
 

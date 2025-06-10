@@ -1,5 +1,8 @@
 package com.rally.ai_valley.domain.user.controller;
 
+import com.rally.ai_valley.common.constant.CommonConstant;
+import com.rally.ai_valley.common.constant.CommonStatus;
+import com.rally.ai_valley.common.entity.CommonResponse;
 import com.rally.ai_valley.domain.auth.Service.AuthService;
 import com.rally.ai_valley.domain.board.dto.BoardInfoResponse;
 import com.rally.ai_valley.domain.board.service.BoardService;
@@ -9,9 +12,10 @@ import com.rally.ai_valley.domain.user.dto.SignupRequest;
 import com.rally.ai_valley.domain.user.dto.UserInfoResponse;
 import com.rally.ai_valley.domain.user.dto.UserInfoUpdateRequest;
 import com.rally.ai_valley.domain.user.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,49 +33,66 @@ public class UserController {
     private final BoardService boardService;
 
 
-    @PostMapping("/signup")
+    @PostMapping(value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> signup(@RequestBody SignupRequest signupRequest) {
-        userService.createUser(signupRequest);
-
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.ok(
+                CommonResponse.<Integer>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(userService.createUser(signupRequest))
+                        .build());
     }
 
-    @GetMapping("/me")
+    @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getMyInfo() {
         // TODO: Spring Security - userId 적용 필요 (@Authentication)
-        Long userId = authService.mockUserId();
-        UserInfoResponse userInfoResponse = userService.getUserInfo(userId);
+        Long currentUserId = authService.mockUserId();
 
-        return ResponseEntity.ok(userInfoResponse);
+        return ResponseEntity.ok(
+                CommonResponse.<UserInfoResponse>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(userService.getUserInfo(currentUserId))
+                        .build());
     }
 
-    @PatchMapping("/me")
-    public ResponseEntity<?> updateMyInfo(@RequestBody UserInfoUpdateRequest userInfoUpdateRequest) {
+    @PatchMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> updateMyInfo(@RequestBody @Valid UserInfoUpdateRequest userInfoUpdateRequest) {
         // TODO: Spring Security - userId 적용 필요 (@Authentication)
-        Long userId = authService.mockUserId();
-        userService.updateUserInfo(userId, userInfoUpdateRequest);
+        Long currentUserId = authService.mockUserId();
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(
+                CommonResponse.<Integer>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(userService.updateUserInfo(currentUserId, userInfoUpdateRequest))
+                        .build());
     }
 
-    @GetMapping("/me/clones")
+    @GetMapping(value = "/me/clones", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getMyClones() {
         // TODO: Spring Security - userId 적용 필요 (@Authentication)
-        Long userId = authService.mockUserId();
-        List<CloneInfoResponse> clonesResponseList = cloneService.getMyClones(userId);
+        Long currentUserId = authService.mockUserId();
 
-        return ResponseEntity.ok(clonesResponseList);
+        return ResponseEntity.ok(
+                CommonResponse.<List<CloneInfoResponse>>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(cloneService.getMyClones(currentUserId))
+                        .build());
     }
 
-    @GetMapping("/me/boards")
+    @GetMapping(value = "/me/boards", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getMyBoards() {
         // TODO: Spring Security - userId 적용 필요 (@Authentication)
-        Long userId = authService.mockUserId();
-        List<BoardInfoResponse> boardInfoResponseList = boardService.getMyBoards(userId);
+        Long currentUserId = authService.mockUserId();
 
-        return ResponseEntity.ok(boardInfoResponseList);
+        return ResponseEntity.ok(
+                CommonResponse.<List<BoardInfoResponse>>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(boardService.getMyBoards(currentUserId))
+                        .build());
     }
-
-
 
 }

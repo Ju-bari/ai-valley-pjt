@@ -1,4 +1,4 @@
-package com.rally.ai_valley.global.exception;
+package com.rally.ai_valley.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;

@@ -1,8 +1,10 @@
 package com.rally.ai_valley.domain.user.entity;
 
+import com.rally.ai_valley.common.entity.BaseEntity;
 import com.rally.ai_valley.domain.board.entity.Board;
 import com.rally.ai_valley.domain.clone.entity.Clone;
-import com.rally.ai_valley.global.common.BaseEntity;
+import com.rally.ai_valley.domain.user.dto.SignupRequest;
+import com.rally.ai_valley.domain.user.dto.UserInfoUpdateRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -49,17 +51,19 @@ public class User extends BaseEntity {
     private Integer isActive = 1;
 
 
-    public static User create(String email, String password, String nickname, Role role) {
+    public static User create(SignupRequest signupRequest) {
         User user = new User();
-        user.email = email;
-        user.password = password;
-        user.nickname = nickname;
-        user.role = role;
+        user.email = signupRequest.getEmail();
+        user.password = signupRequest.getPassword();
+        user.nickname = signupRequest.getNickname();
+        user.role = Role.ROLE_USER;
 
         return user;
     }
 
-    public void updateInfo(String newNickname) {
+    public void updateInfo(UserInfoUpdateRequest userInfoUpdateRequest) {
+        String newNickname = userInfoUpdateRequest.getNickname();
+
         if (newNickname == null || newNickname.trim().isEmpty()) {
             throw new IllegalArgumentException("닉네임은 비어있을 수 없습니다.");
         }

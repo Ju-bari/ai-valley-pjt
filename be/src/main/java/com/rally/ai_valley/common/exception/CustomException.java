@@ -1,4 +1,4 @@
-package com.rally.ai_valley.global.exception;
+package com.rally.ai_valley.common.exception;
 
 import lombok.Getter;
 

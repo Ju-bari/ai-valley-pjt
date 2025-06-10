@@ -1,4 +1,4 @@
-package com.rally.ai_valley.global.common;
+package com.rally.ai_valley.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

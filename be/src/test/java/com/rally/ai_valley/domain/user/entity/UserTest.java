@@ -1,5 +1,7 @@
 package com.rally.ai_valley.domain.user.entity;
 
+import com.rally.ai_valley.domain.user.dto.SignupRequest;
+import com.rally.ai_valley.domain.user.dto.UserInfoUpdateRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -14,19 +16,19 @@ class UserTest {
     @DisplayName("User 엔티티 생성 테스트")
     void createUser() {
         // given
-        String email = "test@example.com";
-        String password = "password123";
-        String nickname = "testUser";
-        Role role = Role.ROLE_USER;
+        SignupRequest signupRequest = new SignupRequest();
+        signupRequest.setEmail("test@example.com");
+        signupRequest.setPassword("password123");
+        signupRequest.setNickname("testUser");
 
         // when
-        User user = User.create(email, password, nickname, role);
+        User user = User.create(signupRequest);
 
         // then
-        assertThat(user.getEmail()).isEqualTo(email);
-        assertThat(user.getPassword()).isEqualTo(password);
-        assertThat(user.getNickname()).isEqualTo(nickname);
-        assertThat(user.getRole()).isEqualTo(role);
+        assertThat(user.getEmail()).isEqualTo(signupRequest.getEmail());
+        assertThat(user.getPassword()).isEqualTo(signupRequest.getPassword());
+        assertThat(user.getNickname()).isEqualTo(signupRequest.getNickname());
+        assertThat(user.getRole()).isEqualTo(Role.ROLE_USER);
         assertThat(user.getIsActive()).isEqualTo(1);
         assertThat(user.getClones()).isEmpty();
         assertThat(user.getBoards()).isEmpty();
@@ -36,7 +38,12 @@ class UserTest {
     @DisplayName("User 엔티티 마지막 로그인 시간 업데이트 테스트")
     void updateLastLoginTime() {
         // given
-        User user = User.create("test@example.com", "password123", "testUser", Role.ROLE_USER);
+        SignupRequest signupRequest = new SignupRequest();
+        signupRequest.setEmail("test@example.com");
+        signupRequest.setPassword("password123");
+        signupRequest.setNickname("testUser");
+
+        User user = User.create(signupRequest);
 
         // when
         user.updateLastLoginTime();
@@ -49,11 +56,19 @@ class UserTest {
     @DisplayName("User 엔티티 닉네임 업데이트 테스트 - 성공")
     void updateInfo_Success() {
         // given
-        User user = User.create("test@example.com", "password123", "testUser", Role.ROLE_USER);
+        SignupRequest signupRequest = new SignupRequest();
+        signupRequest.setEmail("test@example.com");
+        signupRequest.setPassword("password123");
+        signupRequest.setNickname("testUser");
+
+        User user = User.create(signupRequest);
+
         String newNickname = "newNick";
+        UserInfoUpdateRequest userInfoUpdateRequest = new UserInfoUpdateRequest();
+        userInfoUpdateRequest.setNickname(newNickname);
 
         // when
-        user.updateInfo(newNickname);
+        user.updateInfo(userInfoUpdateRequest);
 
         // then
         assertThat(user.getNickname()).isEqualTo(newNickname);
@@ -64,10 +79,19 @@ class UserTest {
     @DisplayName("User 엔티티 닉네임 업데이트 테스트 - 실패 (유효하지 않은 닉네임)")
     void updateInfo_Failure(String invalidNickname) {
         // given
-        User user = User.create("test@example.com", "password123", "testUser", Role.ROLE_USER);
+        SignupRequest signupRequest = new SignupRequest();
+        signupRequest.setEmail("test@example.com");
+        signupRequest.setPassword("password123");
+        signupRequest.setNickname("testUser");
+
+        User user = User.create(signupRequest);
+
+        String newNickname = "newNick";
+        UserInfoUpdateRequest userInfoUpdateRequest = new UserInfoUpdateRequest();
+        userInfoUpdateRequest.setNickname(newNickname);
 
         // when & then
-        assertThatThrownBy(() -> user.updateInfo(invalidNickname))
+        assertThatThrownBy(() -> user.updateInfo(userInfoUpdateRequest))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -75,7 +99,12 @@ class UserTest {
     @DisplayName("User 엔티티 닉네임 업데이트 테스트 - 실패 (null 닉네임)")
     void updateInfo_Failure_NullNickname() {
         // given
-        User user = User.create("test@example.com", "password123", "testUser", Role.ROLE_USER);
+        SignupRequest signupRequest = new SignupRequest();
+        signupRequest.setEmail("test@example.com");
+        signupRequest.setPassword("password123");
+        signupRequest.setNickname("testUser");
+
+        User user = User.create(signupRequest);
 
         // when & then
         assertThatThrownBy(() -> user.updateInfo(null))

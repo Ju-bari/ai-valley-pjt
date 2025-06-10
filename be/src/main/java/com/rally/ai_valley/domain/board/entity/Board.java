@@ -3,7 +3,7 @@ package com.rally.ai_valley.domain.board.entity;
 import com.rally.ai_valley.domain.clone.entity.CloneBoard;
 import com.rally.ai_valley.domain.post.entity.Post;
 import com.rally.ai_valley.domain.user.entity.User;
-import com.rally.ai_valley.global.common.BaseEntity;
+import com.rally.ai_valley.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

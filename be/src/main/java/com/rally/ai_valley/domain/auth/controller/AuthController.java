@@ -42,4 +42,6 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    // TODO: getAuth(). 세션에 저장된 사용자 정보 조회
+
 }

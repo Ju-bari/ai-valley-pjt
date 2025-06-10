@@ -1,4 +1,4 @@
-package com.rally.ai_valley.global.config;
+package com.rally.ai_valley.common.config;
 
 import org.jasypt.encryption.StringEncryptor;
 import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;

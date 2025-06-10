@@ -1,13 +1,12 @@
 package com.rally.ai_valley.domain.user.service;
 
+import com.rally.ai_valley.common.exception.CustomException;
+import com.rally.ai_valley.common.exception.ErrorCode;
 import com.rally.ai_valley.domain.user.dto.SignupRequest;
 import com.rally.ai_valley.domain.user.dto.UserInfoResponse;
 import com.rally.ai_valley.domain.user.dto.UserInfoUpdateRequest;
-import com.rally.ai_valley.domain.user.entity.Role;
 import com.rally.ai_valley.domain.user.entity.User;
 import com.rally.ai_valley.domain.user.repository.UserRepository;
-import com.rally.ai_valley.global.exception.CustomException;
-import com.rally.ai_valley.global.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,12 +43,7 @@ class UserServiceTest {
         signupRequest.setPasswordConfirm("password123");
         signupRequest.setNickname("testUser");
 
-        user = User.create(
-            signupRequest.getEmail(),
-            signupRequest.getPassword(),
-            signupRequest.getNickname(),
-            Role.ROLE_USER
-        );
+        user = User.create(signupRequest);
 
         updateRequest = new UserInfoUpdateRequest();
         updateRequest.setNickname("newNick");
