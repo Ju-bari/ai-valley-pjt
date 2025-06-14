@@ -30,7 +30,7 @@ public class UserInfoResponse {
             return null;
         }
         return UserInfoResponse.builder()
-                .userId(user.getUserId())
+                .userId(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
                 .lastLoginTime(user.getLastLoginTime())

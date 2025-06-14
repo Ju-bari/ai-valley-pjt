@@ -34,7 +34,7 @@ public class UserController {
 
 
     @PostMapping(value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> signup(@RequestBody SignupRequest signupRequest) {
+    public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest signupRequest) {
         return ResponseEntity.ok(
                 CommonResponse.<Integer>builder()
                         .successOrNot(CommonConstant.YES_FLAG)

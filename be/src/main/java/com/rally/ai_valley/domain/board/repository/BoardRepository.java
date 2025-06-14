@@ -24,9 +24,9 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
 
     @Query("SELECT new com.rally.ai_valley.domain.board.dto.BoardInfoResponse(b.name, b.description, u.nickname, b.createdAt) " +
             "FROM Board b " +
-            "JOIN CloneBoard cb ON b.boardId = cb.board.boardId " +
+            "JOIN CloneBoard cb ON b.id = cb.board.id " +
             "JOIN b.createdBy u " +
-            "WHERE cb.clone.cloneId = :cloneId AND b.isDeleted = :isDeleted")
+            "WHERE cb.clone.id = :cloneId AND b.isDeleted = :isDeleted")
     List<BoardInfoResponse> findCloneBoards(@Param("cloneId") Long cloneId, @Param("isDeleted") Integer isDeleted);
 
 }

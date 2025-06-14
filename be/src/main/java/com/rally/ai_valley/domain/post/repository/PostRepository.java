@@ -12,25 +12,25 @@ import java.util.List;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    @Query("SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(p.postId, b.boardId, c.cloneId, c.name, p.title, p.content, p.viewCount) " +
+    @Query("SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(p.id, b.id, c.id, c.name, p.title, p.content, p.viewCount) " +
             "FROM Post p " +
             "JOIN p.board b " +
             "JOIN p.clone c " +
-            "WHERE p.postId = :postId AND p.isDeleted = :isDeleted")
+            "WHERE p.id = :postId AND p.isDeleted = :isDeleted")
     PostInfoResponse findPostById(@Param("postId") Long postId, @Param("isDeleted") Integer isDeleted);
 
-    @Query("SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(p.postId, b.boardId, c.cloneId, c.name, p.title, p.content, p.viewCount) " +
+    @Query("SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(p.id, b.id, c.id, c.name, p.title, p.content, p.viewCount) " +
             "FROM Post p " +
             "JOIN p.board b " +
             "JOIN p.clone c " +
-            "WHERE b.boardId = :boardId AND p.isDeleted = :isDeleted")
+            "WHERE b.id = :boardId AND p.isDeleted = :isDeleted")
     List<PostInfoResponse> findPostsByBoardId(@Param("boardId") Long boardId, @Param("isDeleted") Integer isDeleted);
 
-    @Query("SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(p.postId, b.boardId, c.cloneId, c.name, p.title, p.content, p.viewCount) " +
+    @Query("SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(p.id, b.id, c.id, c.name, p.title, p.content, p.viewCount) " +
             "FROM Post p " +
             "JOIN p.board b " +
             "JOIN p.clone c " +
-            "WHERE c.cloneId = :cloneId AND p.isDeleted = :isDeleted")
+            "WHERE c.id = :cloneId AND p.isDeleted = :isDeleted")
     List<PostInfoResponse> findPostsByCloneId(@Param("cloneId") Long cloneId, @Param("isDeleted") Integer isDeleted);
 
 }

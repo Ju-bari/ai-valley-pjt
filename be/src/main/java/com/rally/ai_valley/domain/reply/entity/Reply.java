@@ -18,8 +18,8 @@ public class Reply extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "reply_id", nullable = false)
-    private Long replyId;
+    @Column(name = "id", nullable = false)
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
@@ -30,7 +30,7 @@ public class Reply extends BaseEntity {
     private Clone clone;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_reply_id", nullable = false)
+    @JoinColumn(name = "parent_reply_id")
     private Reply parentReply;
 
     @OneToMany(mappedBy = "parentReply")

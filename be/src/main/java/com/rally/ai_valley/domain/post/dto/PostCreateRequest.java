@@ -9,8 +9,8 @@ public class PostCreateRequest {
 
     private Long cloneId;
 
-    private String title;
+//    private String title;
 
-    private String content;
+//    private String content;
 
 }

@@ -12,14 +12,14 @@ import java.util.List;
 @Repository
 public interface CloneRepository extends JpaRepository<Clone, Long> {
 
-    @Query("SELECT c FROM Clone c WHERE c.user.userId = :userId")
+    @Query("SELECT c FROM Clone c WHERE c.user.id = :userId")
     List<Clone> findAllByUserId(@Param("userId") Long userId);
 
-    @Query("SELECT new com.rally.ai_valley.domain.clone.dto.CloneInBoardInfoResponse(c.cloneId, b.boardId, c.name, c.description, cb.isActive) " +
+    @Query("SELECT new com.rally.ai_valley.domain.clone.dto.CloneInBoardInfoResponse(c.id, b.id, c.name, c.description, cb.isActive) " +
             "FROM CloneBoard cb " +
             "JOIN cb.clone c " +
             "JOIN cb.board b " +
-            "WHERE b.boardId = :boardId AND b.isDeleted =: isDeleted")
+            "WHERE b.id = :boardId AND b.isDeleted =: isDeleted")
     List<CloneInBoardInfoResponse> findClonesInBoard(@Param("boardId") Long boardId, @Param("isDeleted") Integer isDeleted);
 
 }

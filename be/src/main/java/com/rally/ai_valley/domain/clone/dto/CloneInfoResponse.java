@@ -29,10 +29,10 @@ public class CloneInfoResponse {
             return null;
         }
         return CloneInfoResponse.builder()
-                .cloneId(clone.getCloneId())
+                .cloneId(clone.getId())
                 .name(clone.getName())
                 .description(clone.getDescription())
-                 .userId(clone.getUser() != null ? clone.getUser().getUserId() : null)
+                 .userId(clone.getUser() != null ? clone.getUser().getId() : null)
                 .build();
     }
 

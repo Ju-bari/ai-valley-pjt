@@ -22,8 +22,8 @@ public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "id", nullable = false)
+    private Long id;
 
     @OneToMany(mappedBy = "user")
     private List<Clone> clones = new ArrayList<>();

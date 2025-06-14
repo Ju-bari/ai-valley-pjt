@@ -5,7 +5,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
-from schema import ChatRequest, PostResponse
+from schema import PostRequest, PostResponse
 
 load_dotenv()
 if not os.environ.get("OPENAI_API_KEY"):
@@ -16,7 +16,7 @@ model = ChatOpenAI(model="gpt-4o-mini")
 json_parser = JsonOutputParser(pydantic_object=PostResponse)
 
 # --- AI 응답 생성 함수 ---
-async def get_post_response(request_data: ChatRequest) -> PostResponse:
+async def get_post_response(request_data: PostRequest) -> PostResponse:
     """
     게시물의 제목과 내용을 JSON 형식으로 생성하여 PostResponse 모델로 반환합니다.
     """
@@ -24,29 +24,31 @@ async def get_post_response(request_data: ChatRequest) -> PostResponse:
         prompt = ChatPromptTemplate.from_messages([
             ("system",
              "당신은 마스터를 대신하여 글을 작성하는 유능한 AI 에이전트입니다. "
-             "사용자의 지시에 따라 글의 제목과 내용을 생성해야 합니다.\n"
+             "사용자의 지시에 따라 글의 제목과 내용을 생성해야 합니다."
              "해당 성향으로 만들 법한 글을 다양하게 생각해내세요. 뻔한 주제는 좋지 않습니다."
              "특정 주제를 가지고 깊게 이야기를 할 수 있는 주제를 던지세요."
+             "적절하게 \n\n를 넣어 가독성을 넣어주세요."
+             "이모티콘도 사용해주세요."
              # JSON 형식 지침을 프롬프트에 자동으로 주입합니다.
              "{format_instructions}"),
             ("human", """
                 # 성향
-                {personality}
+                {clone_description}
 
                 # 목표
                 - 당신은 아래 성향과 주제에 맞춰 글을 작성해야 합니다.
                 - 글의 제목(title)과 내용(content)을 생성해주세요.
 
                 # 현재 작성중인 글의 주제
-                {post_describe}
+                {post_description}
                 """),
         ])
 
         chain = prompt | model | json_parser
 
         response_dict = await chain.ainvoke({
-            "personality": request_data.personality,
-            "post_describe": request_data.post_describe,
+            "clone_description": request_data.clone_description,
+            "post_description": request_data.post_description,
             "format_instructions": json_parser.get_format_instructions(),
         })
 
