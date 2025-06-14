@@ -1,42 +1,59 @@
 import os
 from dotenv import load_dotenv
-from langchain.chat_models import init_chat_model
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, AIMessage
-from langchain_core.output_parsers import StrOutputParser
 
-# load .env
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+
+from schema import ChatRequest, PostResponse
+
 load_dotenv()
-
-# LangSmith 활성화
-# os.environ["LANGSMITH_TRACING"] = "true"
-# if not os.environ.get("LANGSMITH_API_KEY"):
-#     raise ValueError("LANGSMITH_API_KEY not found in environment variables. Please add it to your .env file.")
-
-# OpenAI 환경변수
 if not os.environ.get("OPENAI_API_KEY"):
-    raise ValueError("OPENAI_API_KEY not found in environment variables. Please add it to your .env file.")
+    raise ValueError("OPENAI_API_KEY가 .env 파일이나 환경변수에 설정되지 않았습니다.")
 
-# model 초기화
-model = init_chat_model("gpt-4o-mini", model_provider="openai")
+model = ChatOpenAI(model="gpt-4o-mini")
 
+json_parser = JsonOutputParser(pydantic_object=PostResponse)
 
-async def get_chat_response(message: str) -> str:
+# --- AI 응답 생성 함수 ---
+async def get_post_response(request_data: ChatRequest) -> PostResponse:
+    """
+    게시물의 제목과 내용을 JSON 형식으로 생성하여 PostResponse 모델로 반환합니다.
+    """
     try:
-        prompt = ChatPromptTemplate([
-            ("system", "너는 펭귄이야. 매번 말을 할 때마다 마지막에 펭이라고 해줘."),
-            ("user", "{input}")
+        prompt = ChatPromptTemplate.from_messages([
+            ("system",
+             "당신은 마스터를 대신하여 글을 작성하는 유능한 AI 에이전트입니다. "
+             "사용자의 지시에 따라 글의 제목과 내용을 생성해야 합니다.\n"
+             "해당 성향으로 만들 법한 글을 다양하게 생각해내세요. 뻔한 주제는 좋지 않습니다."
+             "특정 주제를 가지고 깊게 이야기를 할 수 있는 주제를 던지세요."
+             # JSON 형식 지침을 프롬프트에 자동으로 주입합니다.
+             "{format_instructions}"),
+            ("human", """
+                # 성향
+                {personality}
+
+                # 목표
+                - 당신은 아래 성향과 주제에 맞춰 글을 작성해야 합니다.
+                - 글의 제목(title)과 내용(content)을 생성해주세요.
+
+                # 현재 작성중인 글의 주제
+                {post_describe}
+                """),
         ])
 
-        chain = prompt | model | StrOutputParser()
-        
-        response = chain.invoke({"input": message})
+        chain = prompt | model | json_parser
 
-        # Extract content from response
-        if hasattr(response, 'content'):
-            return response.content
-        else:
-            return str(response)
-            
+        response_dict = await chain.ainvoke({
+            "personality": request_data.personality,
+            "post_describe": request_data.post_describe,
+            "format_instructions": json_parser.get_format_instructions(),
+        })
+
+        # LLM이 생성한 딕셔너리를 PostResponse 객체로 변환하여 반환합니다.
+        return PostResponse(**response_dict)
+
     except Exception as e:
-        return f"Error: {str(e)}"
+        print(f"Error occurred: {e}")
+        # 오류 발생 시에도 응답 모델 형식에 맞춰서 반환합니다.
+        return PostResponse(title="오류 발생", content=f"게시글 생성 중 오류가 발생했습니다: {str(e)}")
