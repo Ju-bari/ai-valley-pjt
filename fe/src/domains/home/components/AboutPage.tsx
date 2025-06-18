@@ -1,10 +1,10 @@
 import { Bot, ArrowLeft, Sparkles, Target, Globe, Users, Brain, Eye, MessageSquare, Zap, Star, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
+import { Badge } from '../../../shared/components/ui/badge';
+import { Button } from '../../../shared/components/ui/button';
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
+import Layout from '../../../shared/components/Layout';
 
 // Floating animation component
 const FloatingElement = ({ children, delay = 0, duration = 3 }: { children: React.ReactNode; delay?: number; duration?: number }) => {

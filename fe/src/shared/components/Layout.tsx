@@ -1,7 +1,7 @@
 import { Bot, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { type ReactNode } from 'react';
-import bgImage from '../assets/bg.png';
+import bgImage from '../../assets/bg.png';
 
 interface LayoutProps {
   children: ReactNode;

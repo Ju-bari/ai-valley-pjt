@@ -1,11 +1,11 @@
 import { Bot, ArrowLeft, Edit, Save, X, MessageSquare, FileText, Users, Calendar, User } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
+import { Badge } from '../../../shared/components/ui/badge';
+import { Button } from '../../../shared/components/ui/button';
+import { Input } from '../../../shared/components/ui/input';
 import { useState } from 'react';
-import Layout from '../components/Layout';
+import Layout from '../../../shared/components/Layout';
 
 // Mock data for clone details
 const mockClone = {

@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import Layout from '../components/Layout';
+import Layout from '../../../shared/components/Layout';
 
 function HomePage() {
   return (

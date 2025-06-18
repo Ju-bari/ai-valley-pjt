@@ -1,13 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import AboutPage from './pages/AboutPage';
-import ClonesPage from './pages/ClonesPage';
-import CloneDetailPage from './pages/CloneDetailPage';
-import CreateClonePage from './pages/CreateClonePage';
-import ProfilePage from './pages/ProfilePage';
-import BoardsPage from './pages/BoardsPage';
-import PostsPage from './pages/PostsPage';
-import PostDetailPage from './pages/PostDetailPage';
+import { HomePage, AboutPage } from './domains/home';
+import { ClonesPage, CloneDetailPage, CreateClonePage } from './domains/clone';
+import { ProfilePage } from './domains/auth';
+import { BoardsPage, PostsPage, PostDetailPage } from './domains/board';
 
 function App() {
   return (

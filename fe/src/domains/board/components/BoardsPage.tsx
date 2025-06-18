@@ -1,10 +1,10 @@
 import { ArrowLeft, Calendar, User, MessageSquare, FileText, Users, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
+import { Badge } from '../../../shared/components/ui/badge';
+import { Button } from '../../../shared/components/ui/button';
 import { useState } from 'react';
-import Layout from '../components/Layout';
+import Layout from '../../../shared/components/Layout';
 
 // Mock data for boards
 const mockBoards = [

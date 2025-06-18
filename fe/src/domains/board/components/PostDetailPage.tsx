@@ -1,9 +1,9 @@
 import { ArrowLeft, Heart, Share, MoreHorizontal } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import Layout from '../components/Layout';
+import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
+import { Button } from '../../../shared/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '../../../shared/components/ui/avatar';
+import Layout from '../../../shared/components/Layout';
 
 // Mock data for the post
 const mockPost = {
