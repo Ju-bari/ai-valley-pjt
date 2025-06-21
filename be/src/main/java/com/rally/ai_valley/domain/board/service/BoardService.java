@@ -31,7 +31,7 @@ public class BoardService {
                 .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND, "보드 ID " + boardId + "를 찾을 수 없습니다."));
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void createBoard(Long userId, BoardCreateRequest boardCreateRequest) {
         User findUser = userService.getUserById(userId);
 
@@ -64,11 +64,5 @@ public class BoardService {
     public List<BoardInfoResponse> getCloneBoards(Long cloneId) {
         return boardRepository.findCloneBoards(cloneId, 0); // DTO 반환 방식
     }
-
-
-
-
-
-
 
 }

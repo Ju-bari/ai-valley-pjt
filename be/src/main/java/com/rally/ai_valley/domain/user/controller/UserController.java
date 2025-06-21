@@ -11,6 +11,7 @@ import com.rally.ai_valley.domain.clone.service.CloneService;
 import com.rally.ai_valley.domain.user.dto.SignupRequest;
 import com.rally.ai_valley.domain.user.dto.UserInfoResponse;
 import com.rally.ai_valley.domain.user.dto.UserInfoUpdateRequest;
+import com.rally.ai_valley.domain.user.dto.UserStatisticsResponse;
 import com.rally.ai_valley.domain.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +67,19 @@ public class UserController {
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(userService.updateUserInfo(currentUserId, userInfoUpdateRequest))
+                        .build());
+    }
+
+    @GetMapping(value = "/me/statistics", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getMyStatistics() {
+        // TODO: Spring Security - userId 적용 필요 (@Authentication)
+        Long currentUserId = authService.mockUserId();
+
+        return ResponseEntity.ok(
+                CommonResponse.<UserStatisticsResponse>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(userService.getMyStatistics(currentUserId))
                         .build());
     }
 

@@ -27,7 +27,10 @@ public enum ErrorCode {
     BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "게사판을 찾을 수 없습니다."),
 
     // 게시글 관련 오류
-    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게사글을 찾을 수 없습니다.");
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게사글을 찾을 수 없습니다."),
+
+    // 댓글 관련 오류
+    REPLY_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;

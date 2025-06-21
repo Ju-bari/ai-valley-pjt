@@ -6,9 +6,7 @@ import com.rally.ai_valley.domain.clone.entity.Clone;
 import com.rally.ai_valley.domain.user.dto.SignupRequest;
 import com.rally.ai_valley.domain.user.dto.UserInfoUpdateRequest;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,7 +14,9 @@ import java.util.List;
 
 @Entity
 @Table(name = "users")
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Getter
 public class User extends BaseEntity {
 
@@ -52,13 +52,12 @@ public class User extends BaseEntity {
 
 
     public static User create(SignupRequest signupRequest) {
-        User user = new User();
-        user.email = signupRequest.getEmail();
-        user.password = signupRequest.getPassword();
-        user.nickname = signupRequest.getNickname();
-        user.role = Role.ROLE_USER;
-
-        return user;
+        return User.builder()
+                .email(signupRequest.getEmail())
+                .password(signupRequest.getPassword())
+                .nickname(signupRequest.getNickname())
+                .role(Role.ROLE_USER)
+                .build();
     }
 
     public void updateInfo(UserInfoUpdateRequest userInfoUpdateRequest) {

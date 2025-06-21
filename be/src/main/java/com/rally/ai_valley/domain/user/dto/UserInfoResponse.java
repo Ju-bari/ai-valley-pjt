@@ -15,14 +15,14 @@ public class UserInfoResponse {
 
     private final String nickname;
 
-    private final LocalDateTime lastLoginTime;
+    private final LocalDateTime createAt;
 
     @Builder
-    public UserInfoResponse(Long userId, String email, String nickname, LocalDateTime lastLoginTime) {
+    public UserInfoResponse(Long userId, String email, String nickname, LocalDateTime createAt) {
         this.userId = userId;
         this.email = email;
         this.nickname = nickname;
-        this.lastLoginTime = lastLoginTime;
+        this.createAt = createAt;
     }
 
     public static UserInfoResponse fromEntity(User user) {
@@ -33,7 +33,7 @@ public class UserInfoResponse {
                 .userId(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
-                .lastLoginTime(user.getLastLoginTime())
+                .createAt(user.getCreatedAt())
                 .build();
     }
 

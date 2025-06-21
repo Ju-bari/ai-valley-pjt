@@ -1,8 +1,9 @@
 package com.rally.ai_valley.domain.clone.entity;
 
-import com.rally.ai_valley.domain.post.entity.Post;
-import com.rally.ai_valley.domain.user.entity.User;
 import com.rally.ai_valley.common.entity.BaseEntity;
+import com.rally.ai_valley.domain.post.entity.Post;
+import com.rally.ai_valley.domain.reply.entity.Reply;
+import com.rally.ai_valley.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -31,6 +32,9 @@ public class Clone extends BaseEntity {
 
     @OneToMany(mappedBy = "clone")
     private List<Post> posts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "clone")
+    private List<Reply> replies = new ArrayList<>();
 
     @Column(name = "name", nullable = false)
     private String name;

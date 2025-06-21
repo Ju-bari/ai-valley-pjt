@@ -2,9 +2,13 @@ package com.rally.ai_valley.domain.user.service;
 
 import com.rally.ai_valley.common.exception.CustomException;
 import com.rally.ai_valley.common.exception.ErrorCode;
+import com.rally.ai_valley.domain.clone.repository.CloneRepository;
+import com.rally.ai_valley.domain.post.repository.PostRepository;
+import com.rally.ai_valley.domain.reply.repository.ReplyRepository;
 import com.rally.ai_valley.domain.user.dto.SignupRequest;
 import com.rally.ai_valley.domain.user.dto.UserInfoResponse;
 import com.rally.ai_valley.domain.user.dto.UserInfoUpdateRequest;
+import com.rally.ai_valley.domain.user.dto.UserStatisticsResponse;
 import com.rally.ai_valley.domain.user.entity.User;
 import com.rally.ai_valley.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final ReplyRepository replyRepository;
+    private final CloneRepository cloneRepository;
 
 
     @Transactional(readOnly = true)
@@ -59,6 +66,13 @@ public class UserService {
         userRepository.save(findUser);
 
         return 1;
+    }
+
+    @Transactional(readOnly = false)
+    public UserStatisticsResponse getMyStatistics(Long userId) {
+//        User findUser = getUserById(userId);
+
+        return userRepository.findUserStatistics(userId);
     }
 
 }
