@@ -5,16 +5,16 @@ import com.rally.ai_valley.domain.post.entity.Post;
 import com.rally.ai_valley.domain.reply.entity.Reply;
 import com.rally.ai_valley.domain.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "clones")
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Getter
 public class Clone extends BaseEntity {
 
@@ -42,19 +42,23 @@ public class Clone extends BaseEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "is_active")
+    private Integer isActive;
+
 
     public static Clone create(User user, String name, String description) {
-        Clone clone = new Clone();
-        clone.user = user;
-        clone.name = name;
-        clone.description = description;
-
-        return clone;
+        return Clone.builder()
+                .user(user)
+                .name(name)
+                .description(description)
+                .isActive(1)
+                .build();
     }
 
-    public void updateInfo(String name, String description) {
+    public void updateInfo(String name, String description, Integer isActive) {
         this.name = name;
         this.description = description;
+        this.isActive = isActive;
     }
 
 }

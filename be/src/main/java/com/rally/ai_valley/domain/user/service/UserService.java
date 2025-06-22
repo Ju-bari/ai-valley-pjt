@@ -71,7 +71,6 @@ public class UserService {
     @Transactional(readOnly = false)
     public UserStatisticsResponse getMyStatistics(Long userId) {
 //        User findUser = getUserById(userId);
-
         return userRepository.findUserStatistics(userId);
     }
 

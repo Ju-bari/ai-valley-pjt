@@ -33,8 +33,8 @@ public class CloneService {
                 .orElseThrow(() -> new CustomException(ErrorCode.CLONE_NOT_FOUND, "클론 ID " + cloneId + "를 찾을 수 없습니다."));
     }
 
-    @Transactional
-    public void createClone(Long userId, CloneCreateRequest cloneCreateRequest) {
+    @Transactional(rollbackFor = Exception.class)
+    public Integer createClone(Long userId, CloneCreateRequest cloneCreateRequest) {
         User findUser = userService.getUserById(userId);
 
         Clone clone = Clone.create(findUser,
@@ -42,6 +42,8 @@ public class CloneService {
                                     cloneCreateRequest.getDescription());
 
         cloneRepository.save(clone);
+
+        return 1;
     }
 
     @Transactional(readOnly = true)
@@ -60,20 +62,25 @@ public class CloneService {
         return CloneInfoResponse.fromEntity(findClone);
     }
 
-    @Transactional
-    public void updateCloneInfo(Long cloneId, CloneInfoUpdateRequest cloneInfoUpdateRequest) {
+    @Transactional(rollbackFor = Exception.class)
+    public Integer updateCloneInfo(Long cloneId, CloneInfoUpdateRequest cloneInfoUpdateRequest) {
         Clone findClone = getCloneById(cloneId);
 
         findClone.updateInfo(cloneInfoUpdateRequest.getName(),
-                     cloneInfoUpdateRequest.getDescription());
+                cloneInfoUpdateRequest.getDescription(),
+                cloneInfoUpdateRequest.getIsActive());
         cloneRepository.save(findClone);
+
+        return 1;
     }
 
-    @Transactional
-    public void deleteClone(Long cloneId) {
+    @Transactional(rollbackFor = Exception.class)
+    public Integer deleteClone(Long cloneId) {
         Clone findClone = getCloneById(cloneId);
 
         cloneRepository.delete(findClone);
+
+        return 1;
     }
 
     @Transactional(readOnly = true)

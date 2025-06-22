@@ -1,17 +1,22 @@
 package com.rally.ai_valley.domain.clone.controller;
 
+import com.rally.ai_valley.common.constant.CommonConstant;
+import com.rally.ai_valley.common.constant.CommonStatus;
+import com.rally.ai_valley.common.entity.CommonResponse;
 import com.rally.ai_valley.domain.auth.Service.AuthService;
 import com.rally.ai_valley.domain.board.dto.BoardInfoResponse;
 import com.rally.ai_valley.domain.board.service.BoardService;
 import com.rally.ai_valley.domain.clone.dto.CloneCreateRequest;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoResponse;
 import com.rally.ai_valley.domain.clone.dto.CloneInfoUpdateRequest;
+import com.rally.ai_valley.domain.clone.dto.CloneSubBoardRequest;
 import com.rally.ai_valley.domain.clone.service.CloneService;
 import com.rally.ai_valley.domain.post.dto.PostInfoResponse;
 import com.rally.ai_valley.domain.post.service.PostService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,51 +34,81 @@ public class CloneController {
     private final PostService postService;
 
 
-    @PostMapping("/")
-    public ResponseEntity<?> createClone(@RequestBody CloneCreateRequest cloneCreateRequest) {
+    @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> createClone(@Valid @RequestBody CloneCreateRequest cloneCreateRequest) {
         // TODO: Spring Security - userId 적용 필요 (@Authentication)
         Long userId = authService.mockUserId();
-        cloneService.createClone(userId, cloneCreateRequest);
 
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.ok(
+                CommonResponse.<Integer>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(cloneService.createClone(userId, cloneCreateRequest))
+                        .build());
     }
 
-    @GetMapping("/{cloneId}")
-    public ResponseEntity<?> getCloneInfo(@PathVariable Long cloneId) {
-        CloneInfoResponse cloneInfoResponse = cloneService.getCloneInfo(cloneId);
-
-        return ResponseEntity.ok(cloneInfoResponse);
+    @GetMapping(value = "/{cloneId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getCloneInfo(@PathVariable("cloneId") Long cloneId) {
+        return ResponseEntity.ok(
+                CommonResponse.<CloneInfoResponse>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(cloneService.getCloneInfo(cloneId))
+                        .build());
     }
 
-    @PatchMapping("/{cloneId}")
-    public ResponseEntity<?> updateCloneInfo(@PathVariable Long cloneId,
-                                             @RequestBody CloneInfoUpdateRequest cloneInfoUpdateRequest) {
-        cloneService.updateCloneInfo(cloneId, cloneInfoUpdateRequest);
-
-        return ResponseEntity.ok().build();
+    @PatchMapping(value = "/{cloneId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> updateCloneInfo(@PathVariable("cloneId") Long cloneId,
+                                             @Valid @RequestBody CloneInfoUpdateRequest cloneInfoUpdateRequest) {
+        return ResponseEntity.ok(
+                CommonResponse.<Integer>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(cloneService.updateCloneInfo(cloneId, cloneInfoUpdateRequest))
+                        .build());
     }
 
-    @DeleteMapping("/{cloneId}")
-    public ResponseEntity<?> deleteClone(@PathVariable Long cloneId) {
-        cloneService.deleteClone(cloneId);
-
-        return ResponseEntity.ok().build();
+    @DeleteMapping(value = "/{cloneId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> deleteClone(@PathVariable("cloneId") Long cloneId) {
+        return ResponseEntity.ok(
+                CommonResponse.<Integer>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(cloneService.deleteClone(cloneId))
+                        .build());
     }
 
     // 특정 클론에게 등록되어 있는 게시판들
-    @GetMapping("/{cloneId}/boards")
-    public ResponseEntity<?> getCloneBoards(@PathVariable Long cloneId) {
-        List<BoardInfoResponse> boardInfoResponseList = boardService.getCloneBoards(cloneId);
-
-        return ResponseEntity.ok(boardInfoResponseList);
+    @GetMapping(value = "/{cloneId}/boards", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getCloneBoards(@PathVariable("cloneId") Long cloneId) {
+        return ResponseEntity.ok(
+                CommonResponse.<List<BoardInfoResponse>>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(boardService.getBoardsInClone(cloneId))
+                        .build());
     }
 
     // 특정 클론이 작성한 게시글들
-    @GetMapping("/{cloneId}/posts")
-    public ResponseEntity<?> getBoardPosts(@PathVariable Long cloneId) {
-        List<PostInfoResponse> postInfoResponseList = postService.getPostsInClone(cloneId);
+    @GetMapping(value = "/{cloneId}/posts", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getBoardPosts(@PathVariable("cloneId") Long cloneId) {
+        return ResponseEntity.ok(
+                CommonResponse.<List<PostInfoResponse>>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(postService.getPostsInClone(cloneId))
+                        .build());
+    }
 
-        return ResponseEntity.ok(postInfoResponseList);
+    @GetMapping(value = "/{cloneId}/boards", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getBoardPosts(@PathVariable("cloneId") Long cloneId,
+                                           @Valid @RequestBody CloneSubBoardRequest cloneSubBoardRequest) {
+        return ResponseEntity.ok(
+                CommonResponse.<Integer>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(boardService.subscribeBoard(cloneSubBoardRequest.getBoardId()))
+                        .build());
     }
 
 }

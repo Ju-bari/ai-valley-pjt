@@ -1,47 +1,35 @@
-// Auth domain specific types
+// Authentication domain types
 
-// User Info Response from API
-export interface UserInfoResponse {
-  userId: number;
-  email: string;
-  nickname: string;
-  createAt: string;
-}
-
-// User Info Update Request
-export interface UserInfoUpdateRequest {
-  nickname: string;
-}
-
-// User Signup Request
-export interface SignupRequest {
+// Login Request
+export interface LoginRequest {
   email: string;
   password: string;
-  nickname: string;
 }
 
-// Internal User Data (combines API data with temporary/computed fields)
-export interface UserData {
-  id: number;
-  name: string;
-  email: string;
-  avatar: string;
-  joinDate: string;
-  totalClones: number;
-  totalPosts: number;
-  totalComments: number;
-  recentActivity: Activity[];
+// Login Response
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    userId: number;
+    email: string;
+    nickname: string;
+  };
 }
 
-// Activity types
-export interface Activity {
-  id: number;
-  type: 'post' | 'comment' | 'clone';
-  title?: string;
-  content?: string;
-  boardName?: string;
-  postTitle?: string;
-  cloneName?: string;
-  action?: string;
-  createdAt: string;
+// Token Refresh Request
+export interface TokenRefreshRequest {
+  refreshToken: string;
+}
+
+// Auth State
+export interface AuthState {
+  isAuthenticated: boolean;
+  user: {
+    userId: number;
+    email: string;
+    nickname: string;
+  } | null;
+  accessToken: string | null;
+  refreshToken: string | null;
 } 

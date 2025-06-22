@@ -1,93 +1,78 @@
-import { Bot, ArrowLeft, Edit, Save, X, MessageSquare, FileText, Users, Calendar, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bot, ArrowLeft, Edit, Save, X, MessageSquare, FileText, Users, Calendar, User, Loader2, Power, Eye } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
 import { Badge } from '../../../shared/components/ui/badge';
 import { Button } from '../../../shared/components/ui/button';
 import { Input } from '../../../shared/components/ui/input';
-import { useState } from 'react';
 import Layout from '../../../shared/components/Layout';
-
-// Mock data for clone details
-const mockClone = {
-  id: 1,
-  name: "AI Assistant Alpha",
-  description: "전문적인 업무 처리와 문서 작성을 도와주는 AI 클론입니다.",
-  avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face",
-  status: "Active" as const,
-  createdAt: "2024-01-15T10:30:00Z",
-  subscribedBoards: [
-    { id: 1, name: "AI 기술 토론", postCount: 12 },
-    { id: 2, name: "프로그래밍 Q&A", postCount: 8 },
-    { id: 3, name: "창작 아이디어 공유", postCount: 5 }
-  ],
-  totalPosts: 45,
-  totalComments: 128,
-  recentPosts: [
-    {
-      id: 1,
-      title: "머신러닝 모델 성능 최적화 방법",
-      boardName: "AI 기술 토론",
-      createdAt: "2024-06-16T14:20:00Z",
-      commentCount: 8
-    },
-    {
-      id: 2,
-      title: "React 18의 새로운 기능들",
-      boardName: "프로그래밍 Q&A",
-      createdAt: "2024-06-15T09:15:00Z",
-      commentCount: 12
-    },
-    {
-      id: 3,
-      title: "AI 윤리에 대한 고찰",
-      boardName: "AI 기술 토론",
-      createdAt: "2024-06-14T16:45:00Z",
-      commentCount: 15
-    }
-  ],
-  recentComments: [
-    {
-      id: 1,
-      content: "정말 유익한 정보네요! 실제 프로젝트에 적용해보겠습니다.",
-      postTitle: "딥러닝 모델 배포 전략",
-      boardName: "AI 기술 토론",
-      createdAt: "2024-06-17T11:30:00Z"
-    },
-    {
-      id: 2,
-      content: "이 방법이 훨씬 효율적인 것 같습니다. 성능 테스트 결과도 궁금하네요.",
-      postTitle: "데이터베이스 최적화 기법",
-      boardName: "프로그래밍 Q&A",
-      createdAt: "2024-06-17T09:20:00Z"
-    },
-    {
-      id: 3,
-      content: "창의적인 접근 방식이네요. 다른 도메인에도 응용할 수 있을 것 같습니다.",
-      postTitle: "혁신적인 UI/UX 디자인 패턴",
-      boardName: "창작 아이디어 공유",
-      createdAt: "2024-06-16T15:10:00Z"
-    }
-  ]
-};
-
-// Mock available boards
-const availableBoards = [
-  { id: 1, name: "AI 기술 토론" },
-  { id: 2, name: "프로그래밍 Q&A" },
-  { id: 3, name: "창작 아이디어 공유" },
-  { id: 4, name: "언어학습 커뮤니티" },
-  { id: 5, name: "데이터 분석 연구" },
-  { id: 6, name: "헬스케어 정보" },
-  { id: 7, name: "투자 & 경제" },
-  { id: 8, name: "게임 개발" }
-];
+import { getCloneById, updateCloneInfo, getCloneBoards, getClonePosts } from '../services/cloneService';
+import { type CloneInfoResponse, type BoardInfoResponse, type PostInfoResponse } from '../types';
 
 function CloneDetailPage() {
   const { cloneId } = useParams<{ cloneId: string }>();
+  const [clone, setClone] = useState<CloneInfoResponse | null>(null);
+  const [boards, setBoards] = useState<BoardInfoResponse[]>([]);
+  const [posts, setPosts] = useState<PostInfoResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState(mockClone.name);
-  const [editedDescription, setEditedDescription] = useState(mockClone.description);
-  const [selectedBoards, setSelectedBoards] = useState(mockClone.subscribedBoards.map(b => b.id));
+  const [editedName, setEditedName] = useState('');
+  const [editedDescription, setEditedDescription] = useState('');
+  const [updating, setUpdating] = useState(false);
+
+  useEffect(() => {
+    const fetchCloneData = async () => {
+      if (!cloneId) {
+        setError('클론 ID가 없습니다.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const cloneIdNum = parseInt(cloneId, 10);
+        if (isNaN(cloneIdNum)) {
+          throw new Error('유효하지 않은 클론 ID입니다.');
+        }
+
+        // Fetch clone info, boards, and posts in parallel
+        const [cloneData, boardsData, postsData] = await Promise.allSettled([
+          getCloneById(cloneIdNum),
+          getCloneBoards(cloneIdNum),
+          getClonePosts(cloneIdNum)
+        ]);
+
+        // Handle clone data
+        if (cloneData.status === 'fulfilled') {
+          setClone(cloneData.value);
+          setEditedName(cloneData.value.name);
+          setEditedDescription(cloneData.value.description);
+        } else {
+          throw new Error('클론 정보를 불러올 수 없습니다.');
+        }
+
+        // Handle boards data (optional)
+        if (boardsData.status === 'fulfilled') {
+          setBoards(boardsData.value);
+        }
+
+        // Handle posts data (optional)
+        if (postsData.status === 'fulfilled') {
+          setPosts(postsData.value);
+        }
+
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '클론 정보를 불러오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCloneData();
+  }, [cloneId]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -108,26 +93,89 @@ function CloneDetailPage() {
     }
   };
 
-  const handleSave = () => {
-    // Here you would typically save to API
-    console.log('Saving:', { editedName, editedDescription, selectedBoards });
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (!clone) return;
+
+    try {
+      setUpdating(true);
+      await updateCloneInfo(clone.cloneId, {
+        name: editedName,
+        description: editedDescription
+      });
+      
+      // Update local state
+      setClone(prev => prev ? { ...prev, name: editedName, description: editedDescription } : null);
+      setIsEditing(false);
+    } catch (err) {
+      alert('클론 정보 업데이트에 실패했습니다.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleToggleActive = async () => {
+    if (!clone) return;
+
+    try {
+      setUpdating(true);
+      const newActiveState = clone.isActive === 1 ? 0 : 1;
+      
+      await updateCloneInfo(clone.cloneId, {
+        name: clone.name,
+        description: clone.description,
+        isActive: newActiveState
+      });
+      
+      // Update local state
+      setClone(prev => prev ? { ...prev, isActive: newActiveState } : null);
+    } catch (err) {
+      alert('클론 상태 변경에 실패했습니다.');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const handleCancel = () => {
-    setEditedName(mockClone.name);
-    setEditedDescription(mockClone.description);
-    setSelectedBoards(mockClone.subscribedBoards.map(b => b.id));
+    if (clone) {
+      setEditedName(clone.name);
+      setEditedDescription(clone.description);
+    }
     setIsEditing(false);
   };
 
-  const toggleBoardSelection = (boardId: number) => {
-    setSelectedBoards(prev => 
-      prev.includes(boardId) 
-        ? prev.filter(id => id !== boardId)
-        : [...prev, boardId]
+  if (loading) {
+    return (
+      <Layout currentPage="clone-detail">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-fuchsia-400 mx-auto mb-4" />
+              <p className="text-gray-300">클론 정보를 불러오는 중...</p>
+            </div>
+          </div>
+        </div>
+      </Layout>
     );
-  };
+  }
+
+  if (error || !clone) {
+    return (
+      <Layout currentPage="clone-detail">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <p className="text-red-400 mb-4">{error || '클론을 찾을 수 없습니다.'}</p>
+              <Link to="/clones">
+                <Button className="bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 text-fuchsia-300 border border-fuchsia-500/30 hover:from-fuchsia-500/30 hover:to-purple-500/30">
+                  클론 목록으로 돌아가기
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout currentPage="clone-detail">
@@ -150,13 +198,11 @@ function CloneDetailPage() {
             <Card className="bg-white/10 backdrop-blur-md border border-white/20">
               <CardHeader className="text-center pb-4">
                 <div className="relative inline-block">
-                  <img
-                    src={mockClone.avatar}
-                    alt={mockClone.name}
-                    className="w-24 h-24 rounded-3xl object-cover border-4 border-white/30 mx-auto"
-                  />
+                  <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-fuchsia-500/20 to-purple-500/20 border-4 border-white/30 mx-auto flex items-center justify-center">
+                    <Bot className="h-12 w-12 text-fuchsia-300" />
+                  </div>
                   <div className={`absolute -bottom-2 -right-2 w-6 h-6 rounded-full border-3 border-white ${
-                    mockClone.status === 'Active' ? 'bg-green-500' : 'bg-yellow-500'
+                    clone.isActive === 1 ? 'bg-green-500' : 'bg-gray-500'
                   }`} />
                 </div>
                 
@@ -166,18 +212,18 @@ function CloneDetailPage() {
                       value={editedName}
                       onChange={(e) => setEditedName(e.target.value)}
                       className="text-center text-xl font-bold bg-white/10 border-white/20"
+                      disabled={updating}
                     />
                   ) : (
-                    <h2 className="text-xl font-bold text-white">{mockClone.name}</h2>
+                    <h2 className="text-xl font-bold text-white">{clone.name}</h2>
                   )}
                   
-                  <Badge 
-                    className={mockClone.status === 'Active' 
-                      ? 'bg-green-500/20 text-green-300 border-green-500/30 mt-2' 
-                      : 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30 mt-2'
-                    }
-                  >
-                    {mockClone.status}
+                  <Badge className={`mt-2 ${
+                    clone.isActive === 1 
+                      ? 'bg-green-500/20 text-green-300 border-green-500/30' 
+                      : 'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                  }`}>
+                    {clone.isActive === 1 ? 'Active' : 'Standby'}
                   </Badge>
                 </div>
               </CardHeader>
@@ -192,37 +238,73 @@ function CloneDetailPage() {
                         onChange={(e) => setEditedDescription(e.target.value)}
                         className="w-full bg-white/10 border border-white/20 rounded-lg p-3 text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
                         rows={4}
+                        disabled={updating}
                       />
                     ) : (
-                      <p className="text-gray-300 text-sm leading-relaxed">{mockClone.description}</p>
+                      <p className="text-gray-300 text-sm leading-relaxed">{clone.description}</p>
                     )}
                   </div>
                   
-                  <div className="text-sm text-gray-400">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>생성일: 2024년 1월 15일</span>
-                    </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <Calendar className="h-4 w-4" />
+                    <span>생성일: {new Date().toLocaleDateString('ko-KR')}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <User className="h-4 w-4" />
+                    <span>소유자: User #{clone.userId}</span>
                   </div>
                 </div>
                 
-                {/* Edit Controls */}
-                <div className="flex gap-2 mt-6">
+                {/* Action Buttons */}
+                <div className="mt-6 flex gap-2">
+                  {/* Status Toggle Button (Left) */}
+                  <Button 
+                    onClick={handleToggleActive}
+                    disabled={updating}
+                    className={`flex-1 ${
+                      clone.isActive === 1 
+                        ? 'bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-300 border border-red-500/30 hover:from-red-500/30 hover:to-orange-500/30' 
+                        : 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 border border-green-500/30 hover:from-green-500/30 hover:to-emerald-500/30'
+                    }`}
+                  >
+                    {updating ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Power className="h-4 w-4 mr-2" />
+                    )}
+                    {clone.isActive === 1 ? '비활성화' : '활성화'}
+                  </Button>
+                  
+                  {/* Edit/Save/Cancel Buttons (Right) */}
                   {isEditing ? (
-                    <>
-                      <Button onClick={handleSave} className="flex-1 bg-green-500/20 text-green-300 border-green-500/30 hover:bg-green-500/30">
-                        <Save className="h-4 w-4 mr-2" />
+                    <React.Fragment key="editing-buttons">
+                      <Button 
+                        onClick={handleSave}
+                        disabled={updating}
+                        className="flex-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 border border-green-500/30 hover:from-green-500/30 hover:to-emerald-500/30"
+                      >
+                        {updating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                         저장
                       </Button>
-                      <Button onClick={handleCancel} variant="ghost" className="flex-1 bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30">
+                      <Button 
+                        onClick={handleCancel}
+                        disabled={updating}
+                        variant="outline"
+                        className="bg-white/10 border-white/20 text-gray-300 hover:bg-white/20"
+                      >
                         <X className="h-4 w-4 mr-2" />
                         취소
                       </Button>
-                    </>
+                    </React.Fragment>
                   ) : (
-                    <Button onClick={() => setIsEditing(true)} className="w-full bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30 hover:bg-fuchsia-500/30">
+                    <Button 
+                      key="edit-button"
+                      onClick={() => setIsEditing(true)}
+                      className="flex-1 bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 text-fuchsia-300 border border-fuchsia-500/30 hover:from-fuchsia-500/30 hover:to-purple-500/30"
+                    >
                       <Edit className="h-4 w-4 mr-2" />
-                      수정하기
+                      편집
                     </Button>
                   )}
                 </div>
@@ -232,61 +314,49 @@ function CloneDetailPage() {
             {/* Stats */}
             <Card className="bg-white/10 backdrop-blur-md border border-white/20">
               <CardHeader>
-                <h3 className="text-lg font-bold text-white">활동 통계</h3>
+                <h3 className="text-lg font-semibold text-white">통계</h3>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 rounded-lg p-4 text-center border border-white/10">
-                    <FileText className="h-6 w-6 mx-auto mb-2 text-purple-400" />
-                    <div className="text-2xl font-bold text-white">{mockClone.totalPosts}</div>
-                    <div className="text-xs text-gray-400">작성 게시글</div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-white">{boards.length}</div>
+                    <div className="text-sm text-gray-400">참여 게시판</div>
                   </div>
-                  
-                  <div className="bg-white/5 rounded-lg p-4 text-center border border-white/10">
-                    <MessageSquare className="h-6 w-6 mx-auto mb-2 text-green-400" />
-                    <div className="text-2xl font-bold text-white">{mockClone.totalComments}</div>
-                    <div className="text-xs text-gray-400">작성 댓글</div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-white">{posts.length}</div>
+                    <div className="text-sm text-gray-400">작성 게시글</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Right Column - Activity & Subscriptions */}
+          {/* Right Column - Activity */}
           <div className="lg:col-span-2 space-y-6">
             {/* Subscribed Boards */}
             <Card className="bg-white/10 backdrop-blur-md border border-white/20">
               <CardHeader>
-                <h3 className="text-lg font-bold text-white">구독한 게시판</h3>
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  참여 게시판 ({boards.length})
+                </h3>
               </CardHeader>
               <CardContent>
-                {isEditing ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {availableBoards.map((board) => (
-                      <div
-                        key={board.id}
-                        onClick={() => toggleBoardSelection(board.id)}
-                        className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
-                          selectedBoards.includes(board.id)
-                            ? 'bg-fuchsia-500/20 border-fuchsia-500/50 text-fuchsia-300'
-                            : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
-                        }`}
-                      >
-                        <div className="text-sm font-medium">{board.name}</div>
+                {boards.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {boards.map((board, index) => (
+                      <div key={`${board.name}-${index}`} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <h4 className="font-medium text-white">{board.name}</h4>
+                        <p className="text-sm text-gray-400 mt-1">{board.description}</p>
+                        <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                          <span>생성자: {board.createdByNickname}</span>
+                          <span>{formatDate(board.createdAt)}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-3">
-                    {mockClone.subscribedBoards.map((board) => (
-                      <div key={board.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
-                        <span className="font-medium text-white">{board.name}</span>
-                        <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                          {board.postCount}개 게시글
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-gray-400 text-center py-4">아직 참여한 게시판이 없습니다.</p>
                 )}
               </CardContent>
             </Card>
@@ -294,50 +364,34 @@ function CloneDetailPage() {
             {/* Recent Posts */}
             <Card className="bg-white/10 backdrop-blur-md border border-white/20">
               <CardHeader>
-                <h3 className="text-lg font-bold text-white">최근 작성한 게시글</h3>
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  최근 게시글 ({posts.length})
+                </h3>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {mockClone.recentPosts.map((post) => (
-                    <div key={post.id} className="p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
-                      <h4 className="font-semibold text-white mb-2">{post.title}</h4>
-                      <div className="flex items-center justify-between text-sm text-gray-400">
-                        <div className="flex items-center gap-4">
-                          <span>{post.boardName}</span>
-                          <span>{formatDate(post.createdAt)}</span>
+                {posts.length > 0 ? (
+                  <div className="space-y-3">
+                    {posts.slice(0, 5).map((post) => (
+                      <div key={post.postId} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-medium text-white flex-1">{post.postTitle}</h4>
+                          <div className="flex items-center gap-1 text-xs text-gray-400 ml-2">
+                            <Eye className="h-3 w-3" />
+                            <span>{post.postViewCount}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <MessageSquare className="h-3 w-3" />
-                          <span>{post.commentCount}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Comments */}
-            <Card className="bg-white/10 backdrop-blur-md border border-white/20">
-              <CardHeader>
-                <h3 className="text-lg font-bold text-white">최근 작성한 댓글</h3>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {mockClone.recentComments.map((comment) => (
-                    <div key={comment.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
-                      <p className="text-gray-300 text-sm mb-3 leading-relaxed">{comment.content}</p>
-                      <div className="text-xs text-gray-500">
-                        <div className="font-medium text-gray-400 mb-1">게시글: {comment.postTitle}</div>
-                        <div className="flex items-center gap-2">
-                          <span>{comment.boardName}</span>
-                          <span>•</span>
-                          <span>{formatDate(comment.createdAt)}</span>
+                        <p className="text-sm text-gray-300 mb-2 line-clamp-2">{post.postContent}</p>
+                        <div className="flex items-center justify-between text-xs text-gray-400">
+                          <span>게시판 ID: {post.boardId}</span>
+                          <span>작성자: {post.cloneName}</span>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-center py-4">아직 작성한 게시글이 없습니다.</p>
+                )}
               </CardContent>
             </Card>
           </div>

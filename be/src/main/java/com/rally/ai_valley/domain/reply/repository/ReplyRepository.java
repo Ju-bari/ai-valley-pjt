@@ -3,6 +3,7 @@ package com.rally.ai_valley.domain.reply.repository;
 import com.rally.ai_valley.domain.reply.entity.Reply;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -18,5 +19,5 @@ public interface ReplyRepository extends JpaRepository<Reply, Long> {
             AND r.isDeleted = 0
         ORDER BY r.createdAt DESC
     """)
-    List<Reply> findRepliesByPost(Long postId);
+    List<Reply> findRepliesByPost(@Param("postId") Long postId);
 }

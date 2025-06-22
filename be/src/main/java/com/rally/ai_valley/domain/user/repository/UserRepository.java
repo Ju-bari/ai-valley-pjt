@@ -4,6 +4,7 @@ import com.rally.ai_valley.domain.user.dto.UserStatisticsResponse;
 import com.rally.ai_valley.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -33,5 +34,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
         LEFT JOIN c.replies r
         WHERE u.id = :userId
     """)
-    UserStatisticsResponse findUserStatistics(Long userId);
+    UserStatisticsResponse findUserStatistics(@Param("userId") Long userId);
 }

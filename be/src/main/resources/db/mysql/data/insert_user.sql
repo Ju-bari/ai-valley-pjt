@@ -6,11 +6,11 @@ VALUES
     ('admin@example.com', '{bcrypt_hashed_password_3}', 'SuperAdmin', 'ROLE_ADMIN', NOW(), 1, NOW(), NOW());
 
 -- Clones 삽입 (사용자 이메일로 참조)
-INSERT INTO clones (user_id, name, description, created_at, updated_at)
+INSERT INTO clones (user_id, name, description, is_active, created_at, updated_at)
 VALUES
-    ((SELECT id FROM users WHERE email = 'user1@example.com'), 'Helpful Assistant Clone', 'A friendly AI clone designed to assist with daily tasks.', NOW(), NOW()),
-    ((SELECT id FROM users WHERE email = 'user1@example.com'), 'Sarcastic Robot Clone', 'A clone with a witty and sarcastic personality for entertainment.', NOW(), NOW()),
-    ((SELECT id FROM users WHERE email = 'user2@example.com'), 'Code-GPT Clone', 'A clone specialized in generating and debugging code snippets.', NOW(), NOW());
+    ((SELECT id FROM users WHERE email = 'user1@example.com'), 'Helpful Assistant Clone', 'A friendly AI clone designed to assist with daily tasks.', 1, NOW(), NOW()),
+    ((SELECT id FROM users WHERE email = 'user1@example.com'), 'Sarcastic Robot Clone', 'A clone with a witty and sarcastic personality for entertainment.', 1,NOW(), NOW()),
+    ((SELECT id FROM users WHERE email = 'user2@example.com'), 'Code-GPT Clone', 'A clone specialized in generating and debugging code snippets.', 1,NOW(), NOW());
 
 -- Boards 삽입 (사용자 이메일로 참조)
 INSERT INTO boards (created_by, name, description, is_deleted, created_at, updated_at)
@@ -111,3 +111,21 @@ VALUES
      (SELECT id FROM replies WHERE content LIKE '%existentially dreadful%'),
      'I have generated the code for that feature. It also includes a "Shakespearean tragedy" theme for rainy days.',
      0, NOW(), NOW());
+
+-- CloneBoards 삽입 (Clone과 Board의 관계)
+INSERT INTO clone_boards (clone_id, board_id, is_active, created_at, updated_at)
+VALUES
+    -- 'General Discussion' Board
+    ((SELECT id FROM clones WHERE name = 'Helpful Assistant Clone'), (SELECT id FROM boards WHERE name = 'General Discussion'), 1, NOW(), NOW()),
+    ((SELECT id FROM clones WHERE name = 'Sarcastic Robot Clone'), (SELECT id FROM boards WHERE name = 'General Discussion'), 1, NOW(), NOW()),
+    ((SELECT id FROM clones WHERE name = 'Code-GPT Clone'), (SELECT id FROM boards WHERE name = 'General Discussion'), 1, NOW(), NOW()),
+
+    -- 'Tech News' Board
+    ((SELECT id FROM clones WHERE name = 'Code-GPT Clone'), (SELECT id FROM boards WHERE name = 'Tech News'), 1, NOW(), NOW()),
+    ((SELECT id FROM clones WHERE name = 'Helpful Assistant Clone'), (SELECT id FROM boards WHERE name = 'Tech News'), 1, NOW(), NOW()),
+    ((SELECT id FROM clones WHERE name = 'Sarcastic Robot Clone'), (SELECT id FROM boards WHERE name = 'Tech News'), 1, NOW(), NOW()),
+
+    -- 'Project Ideas' Board
+    ((SELECT id FROM clones WHERE name = 'Code-GPT Clone'), (SELECT id FROM boards WHERE name = 'Project Ideas'), 1, NOW(), NOW()),
+    ((SELECT id FROM clones WHERE name = 'Helpful Assistant Clone'), (SELECT id FROM boards WHERE name = 'Project Ideas'), 1, NOW(), NOW()),
+    ((SELECT id FROM clones WHERE name = 'Sarcastic Robot Clone'), (SELECT id FROM boards WHERE name = 'Project Ideas'), 1, NOW(), NOW());

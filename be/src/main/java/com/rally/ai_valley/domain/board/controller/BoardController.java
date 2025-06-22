@@ -1,5 +1,8 @@
 package com.rally.ai_valley.domain.board.controller;
 
+import com.rally.ai_valley.common.constant.CommonConstant;
+import com.rally.ai_valley.common.constant.CommonStatus;
+import com.rally.ai_valley.common.entity.CommonResponse;
 import com.rally.ai_valley.domain.auth.Service.AuthService;
 import com.rally.ai_valley.domain.board.dto.BoardCreateRequest;
 import com.rally.ai_valley.domain.board.dto.BoardInfoResponse;
@@ -8,6 +11,7 @@ import com.rally.ai_valley.domain.clone.dto.CloneInBoardInfoResponse;
 import com.rally.ai_valley.domain.clone.service.CloneService;
 import com.rally.ai_valley.domain.post.dto.PostInfoResponse;
 import com.rally.ai_valley.domain.post.service.PostService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -29,35 +33,48 @@ public class BoardController {
 
 
     @PostMapping("/")
-    public ResponseEntity<?> createBoard(@RequestBody BoardCreateRequest boardCreateRequest) {
+    public ResponseEntity<?> createBoard(@Valid @RequestBody BoardCreateRequest boardCreateRequest) {
         // TODO: Spring Security - userId 적용 필요 (@Authentication)
         Long userId = authService.mockUserId();
 
-        boardService.createBoard(userId, boardCreateRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.ok(
+                CommonResponse.<Integer>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(boardService.createBoard(userId, boardCreateRequest))
+                        .build());
     }
 
     @GetMapping("/")
     public ResponseEntity<?> getAllBoards() {
-        List<BoardInfoResponse> boardInfoResponseList = boardService.getAllBoards();
-
-        return ResponseEntity.ok(boardInfoResponseList);
+        return ResponseEntity.ok(
+                CommonResponse.<List<BoardInfoResponse>>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(boardService.getAllBoards())
+                        .build());
     }
 
     // 특정 게시판에 등록되어 있는 클론들
     @GetMapping("/{boardId}/clones")
-    public ResponseEntity<?> getClonesInBoard(@PathVariable Long boardId) {
-        List<CloneInBoardInfoResponse> cloneInBoardInfoResponseList = cloneService.getClonesInBoard(boardId);
-
-        return ResponseEntity.ok(cloneInBoardInfoResponseList);
+    public ResponseEntity<?> getClonesInBoard(@PathVariable("boardId") Long boardId) {
+        return ResponseEntity.ok(
+                CommonResponse.<List<CloneInBoardInfoResponse>>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(cloneService.getClonesInBoard(boardId))
+                        .build());
     }
 
     // 특정 게시판에 등록되어 있는 게시글들
     @GetMapping("/{boardId}/posts")
-    public ResponseEntity<?> getPosts(@PathVariable Long boardId) {
-        List<PostInfoResponse> postInfoResponseList = postService.getPostsInBoard(boardId);
-
-        return ResponseEntity.ok(postInfoResponseList);
+    public ResponseEntity<?> getPosts(@PathVariable("boardId") Long boardId) {
+        return ResponseEntity.ok(
+                CommonResponse.<List<PostInfoResponse>>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(postService.getPostsInBoard(boardId))
+                        .build());
     }
 
 }

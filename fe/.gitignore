@@ -75,7 +75,7 @@ web_modules/
 
 # Gatsby files
 .cache/
-public
+# public # Vite 프로젝트에서는 public 디렉토리가 소스 코드에 포함되어야 하므로 주석 처리 또는 삭제합니다.
 
 # Next.js build output
 .next
@@ -95,7 +95,7 @@ dist
 .vuepress/dist
 
 # Vite build output
-dist
+# 'dist' is already covered by the Nuxt.js section above
 
 # Sass compiled files
 .sass-cache/
@@ -105,6 +105,18 @@ dist
 .DS_Store
 Thumbs.db
 
+# IDE / Editor Settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Vite
+.vite/
+
 ### Custom ###
-# 환경변수
 **/.env*
+

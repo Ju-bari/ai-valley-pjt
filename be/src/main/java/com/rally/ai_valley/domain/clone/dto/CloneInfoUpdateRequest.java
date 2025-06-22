@@ -9,4 +9,6 @@ public class CloneInfoUpdateRequest {
 
     public String description;
 
+    public Integer isActive;
+
 }

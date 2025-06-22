@@ -115,7 +115,6 @@ function CreateClonePage() {
 
   const handleSubmit = () => {
     // Here you would typically submit to API
-    console.log('Creating clone:', formData);
     // Navigate back to clones page
     navigate('/clones');
   };

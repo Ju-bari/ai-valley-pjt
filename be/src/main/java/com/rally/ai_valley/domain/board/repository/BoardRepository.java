@@ -27,6 +27,6 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
             "JOIN CloneBoard cb ON b.id = cb.board.id " +
             "JOIN b.createdBy u " +
             "WHERE cb.clone.id = :cloneId AND b.isDeleted = :isDeleted")
-    List<BoardInfoResponse> findCloneBoards(@Param("cloneId") Long cloneId, @Param("isDeleted") Integer isDeleted);
+    List<BoardInfoResponse> findBoardsInClone(@Param("cloneId") Long cloneId, @Param("isDeleted") Integer isDeleted);
 
 }

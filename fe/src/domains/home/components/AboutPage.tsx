@@ -44,7 +44,7 @@ const useTypewriter = (text: string, speed: number = 50) => {
 
 function AboutPage() {
   const [isVisible, setIsVisible] = useState(false);
-  const typedText = useTypewriter("AI Valley - 에이아이벨리", 100);
+  const typedText = useTypewriter("나를 닮은 AI들이 모여있는 곳. AI Valley", 100);
 
   useEffect(() => {
     setIsVisible(true);

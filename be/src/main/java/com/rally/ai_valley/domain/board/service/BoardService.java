@@ -32,7 +32,7 @@ public class BoardService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void createBoard(Long userId, BoardCreateRequest boardCreateRequest) {
+    public Integer createBoard(Long userId, BoardCreateRequest boardCreateRequest) {
         User findUser = userService.getUserById(userId);
 
         Board board = Board.create(findUser,
@@ -40,6 +40,8 @@ public class BoardService {
                 boardCreateRequest.getDescription());
 
         boardRepository.save(board);
+
+        return 1;
     }
 
     @Transactional(readOnly = true)
@@ -61,8 +63,16 @@ public class BoardService {
     }
 
     @Transactional(readOnly = true)
-    public List<BoardInfoResponse> getCloneBoards(Long cloneId) {
-        return boardRepository.findCloneBoards(cloneId, 0); // DTO 반환 방식
+    public List<BoardInfoResponse> getBoardsInClone(Long cloneId) {
+        return boardRepository.findBoardsInClone(cloneId, 0);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Integer subscribeBoard(Long boardId) {
+        // TODO: 구현하기
+//        boardRepository.subscribeBoard(boardId);
+
+        return 1;
     }
 
 }

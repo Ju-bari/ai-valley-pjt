@@ -6,7 +6,7 @@ import { Button } from '../../../shared/components/ui/button';
 import { Input } from '../../../shared/components/ui/input';
 import { useState, useEffect } from 'react';
 import Layout from '../../../shared/components/Layout';
-import { getUserInfo, updateUserInfo, transformToUserData } from '../services/userService';
+import { getCompleteUserData, updateUserInfo } from '../services/userService';
 import { type UserData } from '../types';
 import { ApiException } from '../../../shared/utils/api';
 
@@ -27,11 +27,10 @@ function ProfilePage() {
         setLoading(true);
         setError(null);
         
-        const userInfo = await getUserInfo();
-        const transformedUserData = transformToUserData(userInfo);
+        const userData = await getCompleteUserData();
         
-        setUserData(transformedUserData);
-        setEditedName(userInfo.nickname);
+        setUserData(userData);
+        setEditedName(userData.name);
       } catch (err) {
         const errorMessage = err instanceof ApiException 
           ? `${err.message}${err.commonStatus ? ` (${err.commonStatus})` : ''}` 
@@ -40,7 +39,6 @@ function ProfilePage() {
             : '사용자 정보를 불러오는데 실패했습니다.';
             
         setError(errorMessage);
-        console.error('Error loading user data:', err);
       } finally {
         setLoading(false);
       }
@@ -147,7 +145,6 @@ function ProfilePage() {
           ? err.message
           : '프로필 업데이트에 실패했습니다.';
         
-      console.error('Error updating user info:', err);
       setValidationError(errorMessage);
     } finally {
       setIsUpdating(false);
@@ -222,11 +219,17 @@ function ProfilePage() {
             <Card className="bg-white/10 backdrop-blur-md border border-white/20">
               <CardHeader className="text-center pb-4">
                 <div className="relative inline-block">
-                  <img
-                    src={userData.avatar}
-                    alt={userData.name}
-                    className="w-32 h-32 rounded-3xl object-cover border-4 border-white mx-auto"
-                  />
+                  {userData.avatar ? (
+                    <img
+                      src={userData.avatar}
+                      alt={userData.name}
+                      className="w-32 h-32 rounded-3xl object-cover border-4 border-white mx-auto"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-fuchsia-500/20 to-purple-500/20 border-4 border-white mx-auto flex items-center justify-center">
+                      <User className="h-16 w-16 text-fuchsia-300" />
+                    </div>
+                  )}
                   {isEditing && (
                     <button className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full bg-fuchsia-500 border-2 border-white flex items-center justify-center hover:bg-fuchsia-600 transition-colors shadow-lg">
                       <Camera className="h-5 w-5 text-white" />
@@ -326,15 +329,18 @@ function ProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+                  <Link 
+                    to="/clones"
+                    className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group"
+                  >
                     <div className="flex items-center gap-3">
-                      <Bot className="h-5 w-5 text-blue-400" />
-                      <span className="text-white font-medium">AI 클론</span>
+                      <Bot className="h-5 w-5 text-blue-400 group-hover:text-blue-300 transition-colors" />
+                      <span className="text-white font-medium group-hover:text-blue-300 transition-colors">AI 클론</span>
                     </div>
-                    <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                    <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 group-hover:bg-blue-500/30 transition-colors">
                       {userData.totalClones}개
                     </Badge>
-                  </div>
+                  </Link>
                   
                   <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
                     <div className="flex items-center gap-3">

@@ -6,15 +6,23 @@ export { default as CreateClonePage } from './components/CreateClonePage';
 // Types
 export type {
   Clone,
+  CloneInfoResponse,
+  CloneCreateRequest,
+  CloneInfoUpdateRequest,
+  BoardInfoResponse,
+  PostInfoResponse,
   PersonalityTemplate,
 } from './types';
 
 // Services
 export {
   CloneService,
-  getClones,
-  getCloneById,
   createClone,
-  updateClone,
+  getCloneById,
+  updateCloneInfo,
   deleteClone,
+  getCloneBoards,
+  getClonePosts,
+  getMyClones,
+  getAllClones,
 } from './services/cloneService'; 
