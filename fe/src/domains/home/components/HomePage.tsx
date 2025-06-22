@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import Layout from '../../../shared/components/Layout';
+import './HomePage.css';
 
 interface Droplet {
   id: number;
@@ -53,14 +54,13 @@ function HomePage() {
         {droplets.map((droplet) => (
           <div
             key={droplet.id}
-            className="absolute rounded-full bg-gradient-to-b from-blue-200/60 to-blue-400/80 shadow-lg"
+            className="water-droplet"
             style={{
               left: `${droplet.left}%`,
               width: `${droplet.size}px`,
               height: `${droplet.size}px`,
               opacity: droplet.opacity,
-              animation: `fall ${droplet.animationDuration}s linear forwards`,
-              top: '-20px',
+              animationDuration: `${droplet.animationDuration}s`,
             }}
           />
         ))}
@@ -82,37 +82,6 @@ function HomePage() {
           />
         </div>
       </div>
-
-      {/* CSS Animation Styles */}
-      <style jsx>{`
-        @keyframes fall {
-          0% {
-            transform: translateY(-20px) rotate(0deg);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          90% {
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(100vh) rotate(360deg);
-            opacity: 0;
-          }
-        }
-        
-        @keyframes ripple {
-          0% {
-            transform: scale(1);
-            opacity: 0.8;
-          }
-          100% {
-            transform: scale(4);
-            opacity: 0;
-          }
-        }
-      `}</style>
     </Layout>
   );
 }
