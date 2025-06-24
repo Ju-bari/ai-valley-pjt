@@ -1,22 +1,19 @@
 package com.rally.ai_valley.domain.clone.service;
 
-import com.rally.ai_valley.domain.clone.dto.CloneInBoardInfoResponse;
-import com.rally.ai_valley.domain.clone.dto.CloneCreateRequest;
-import com.rally.ai_valley.domain.clone.dto.CloneInfoResponse;
-import com.rally.ai_valley.domain.clone.dto.CloneInfoUpdateRequest;
+import com.rally.ai_valley.common.exception.CustomException;
+import com.rally.ai_valley.common.exception.ErrorCode;
+import com.rally.ai_valley.domain.board.service.BoardService;
+import com.rally.ai_valley.domain.clone.dto.*;
 import com.rally.ai_valley.domain.clone.entity.Clone;
 import com.rally.ai_valley.domain.clone.repository.CloneRepository;
 import com.rally.ai_valley.domain.user.entity.User;
 import com.rally.ai_valley.domain.user.service.UserService;
-import com.rally.ai_valley.common.exception.CustomException;
-import com.rally.ai_valley.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +22,8 @@ public class CloneService {
 
     private final CloneRepository cloneRepository;
     private final UserService userService;
+    private final BoardService boardService;
+    private final CloneBoardService cloneBoardService;
 
 
     @Transactional(readOnly = true)
@@ -33,33 +32,38 @@ public class CloneService {
                 .orElseThrow(() -> new CustomException(ErrorCode.CLONE_NOT_FOUND, "클론 ID " + cloneId + "를 찾을 수 없습니다."));
     }
 
+    // 아이디 받아오는 로직
     @Transactional(rollbackFor = Exception.class)
     public Integer createClone(Long userId, CloneCreateRequest cloneCreateRequest) {
         User findUser = userService.getUserById(userId);
 
         Clone clone = Clone.create(findUser,
-                                    cloneCreateRequest.getName(),
-                                    cloneCreateRequest.getDescription());
+                cloneCreateRequest.getName(),
+                cloneCreateRequest.getDescription());
 
-        cloneRepository.save(clone);
+        Clone savedClone = cloneRepository.save(clone);
+        Long cloneId = savedClone.getId();
+
+        // 보드 연결 처리
+        if (cloneCreateRequest.getBoardIds() != null && !cloneCreateRequest.getBoardIds().isEmpty()) {
+            for (Long boardId : cloneCreateRequest.getBoardIds()) {
+                AddCloneToBoardRequest addRequest = new AddCloneToBoardRequest();
+                addRequest.setBoardId(boardId);
+                cloneBoardService.addCloneToBoard(cloneId, addRequest); // TODO: 리스트로 받아서 DB 호출을 줄이는 방법 필요
+            }
+        }
 
         return 1;
     }
 
     @Transactional(readOnly = true)
     public List<CloneInfoResponse> getMyClones(Long userId) {
-        List<Clone> cloneList = cloneRepository.findAllByUserId(userId);
-
-        return cloneList.stream()
-                .map(CloneInfoResponse::fromEntity)
-                .collect(Collectors.toList());
+        return cloneRepository.findAllByUserId(userId);
     }
 
     @Transactional(readOnly = true)
     public CloneInfoResponse getCloneInfo(Long cloneId) {
-        Clone findClone = getCloneById(cloneId);
-
-        return CloneInfoResponse.fromEntity(findClone);
+        return cloneRepository.getCloneByCloneId(cloneId);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -81,6 +85,11 @@ public class CloneService {
         cloneRepository.delete(findClone);
 
         return 1;
+    }
+
+    @Transactional(readOnly = true)
+    public CloneStatisticsResponse getCloneStatistics(Long cloneId) {
+        return cloneRepository.findUserStatistics(cloneId);
     }
 
     @Transactional(readOnly = true)

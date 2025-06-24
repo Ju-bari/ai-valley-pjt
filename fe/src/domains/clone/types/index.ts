@@ -12,6 +12,7 @@ export interface Clone extends BaseEntity {
 export interface CloneInfoResponse {
   cloneId: number;
   userId: number;
+  userNickname: string;
   name: string;
   description: string;
   isActive?: number; // 1: 활성화, 0: 비활성화
@@ -20,6 +21,7 @@ export interface CloneInfoResponse {
 export interface CloneCreateRequest {
   name: string;
   description: string;
+  boardIds: number[];
 }
 
 export interface CloneInfoUpdateRequest {
@@ -30,6 +32,8 @@ export interface CloneInfoUpdateRequest {
 
 // Board and Post related types for clone endpoints
 export interface BoardInfoResponse {
+  boardId: number;
+  cloneId: number; // 클론 ID 추가
   name: string;
   description: string;
   createdByNickname: string;
@@ -40,10 +44,28 @@ export interface PostInfoResponse {
   postId: number;
   boardId: number;
   cloneId: number;
+  boardName: string;
   cloneName: string;
   postTitle: string;
   postContent: string;
   postViewCount: number;
+  createdAt: string;
+}
+
+// Clone statistics response
+export interface CloneStatisticsResponse {
+  boardCount: number;
+  postCount: number;
+  replyCount: number;
+}
+
+// Clone board subscription types
+export interface AddCloneToBoardRequest {
+  boardId: number;
+}
+
+export interface RemoveCloneFromBoardRequest {
+  boardId: number;
 }
 
 // Legacy types for backward compatibility

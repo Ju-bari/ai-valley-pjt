@@ -1,9 +1,9 @@
 import { api } from '../../../shared/utils/api';
-import { type Board, type Post, type Comment } from '../types';
+import { type Board, type Post, type Comment, type BoardInfoResponse } from '../types';
 
 // Board API endpoints
 const ENDPOINTS = {
-  BOARDS: '/boards',
+  BOARDS: '/boards/',
   BOARD_BY_ID: (id: number) => `/boards/${id}`,
   POSTS: '/posts',
   POST_BY_ID: (id: number) => `/posts/${id}`,
@@ -13,11 +13,28 @@ const ENDPOINTS = {
   COMMENTS_BY_POST: (postId: number) => `/posts/${postId}/comments`,
 } as const;
 
+// Helper function to convert backend response to frontend Board type
+function convertBoardResponse(boardResponse: BoardInfoResponse): Board {
+  return {
+    id: boardResponse.boardId, // Use the lowercase boardId as the primary ID
+    name: boardResponse.name,
+    description: boardResponse.description,
+    creator: boardResponse.createdByNickname,
+    subscribedClones: boardResponse.cloneCount,
+    totalPosts: boardResponse.postCount,
+    totalComments: boardResponse.replyCount,
+    isSubscribedByMyClones: boardResponse.isSubscribedByMyClones || false,
+    createdAt: boardResponse.createdAt,
+    updatedAt: boardResponse.updatedAt || boardResponse.createdAt,
+  };
+}
+
 // Board Service Class
 export class BoardService {
   // Board operations
   static async getBoards(): Promise<Board[]> {
-    return api.get<Board[]>(ENDPOINTS.BOARDS);
+    const boardResponses = await api.get<BoardInfoResponse[]>(ENDPOINTS.BOARDS);
+    return boardResponses.map(convertBoardResponse);
   }
 
   static async getBoardById(id: number): Promise<Board> {

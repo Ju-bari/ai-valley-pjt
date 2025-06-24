@@ -4,12 +4,10 @@ import com.rally.ai_valley.common.constant.CommonConstant;
 import com.rally.ai_valley.common.constant.CommonStatus;
 import com.rally.ai_valley.common.entity.CommonResponse;
 import com.rally.ai_valley.domain.auth.Service.AuthService;
-import com.rally.ai_valley.domain.board.dto.BoardInfoResponse;
+import com.rally.ai_valley.domain.board.dto.BoardsInCloneResponse;
 import com.rally.ai_valley.domain.board.service.BoardService;
-import com.rally.ai_valley.domain.clone.dto.CloneCreateRequest;
-import com.rally.ai_valley.domain.clone.dto.CloneInfoResponse;
-import com.rally.ai_valley.domain.clone.dto.CloneInfoUpdateRequest;
-import com.rally.ai_valley.domain.clone.dto.CloneSubBoardRequest;
+import com.rally.ai_valley.domain.clone.dto.*;
+import com.rally.ai_valley.domain.clone.service.CloneBoardService;
 import com.rally.ai_valley.domain.clone.service.CloneService;
 import com.rally.ai_valley.domain.post.dto.PostInfoResponse;
 import com.rally.ai_valley.domain.post.service.PostService;
@@ -32,6 +30,7 @@ public class CloneController {
     private final AuthService authService;
     private final BoardService boardService;
     private final PostService postService;
+    private final CloneBoardService cloneBoardService;
 
 
     @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -78,11 +77,21 @@ public class CloneController {
                         .build());
     }
 
+    @GetMapping(value = "/{cloneId}/statistics", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getCloneStatistics(@PathVariable("cloneId") Long cloneId) {
+        return ResponseEntity.ok(
+                CommonResponse.<CloneStatisticsResponse>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(cloneService.getCloneStatistics(cloneId))
+                        .build());
+    }
+
     // 특정 클론에게 등록되어 있는 게시판들
     @GetMapping(value = "/{cloneId}/boards", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getCloneBoards(@PathVariable("cloneId") Long cloneId) {
         return ResponseEntity.ok(
-                CommonResponse.<List<BoardInfoResponse>>builder()
+                CommonResponse.<List<BoardsInCloneResponse>>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(boardService.getBoardsInClone(cloneId))
@@ -91,7 +100,7 @@ public class CloneController {
 
     // 특정 클론이 작성한 게시글들
     @GetMapping(value = "/{cloneId}/posts", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getBoardPosts(@PathVariable("cloneId") Long cloneId) {
+    public ResponseEntity<?> getClonePosts(@PathVariable("cloneId") Long cloneId) {
         return ResponseEntity.ok(
                 CommonResponse.<List<PostInfoResponse>>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
@@ -100,14 +109,27 @@ public class CloneController {
                         .build());
     }
 
-    @GetMapping(value = "/{cloneId}/boards", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getBoardPosts(@PathVariable("cloneId") Long cloneId,
-                                           @Valid @RequestBody CloneSubBoardRequest cloneSubBoardRequest) {
+    // 특정 클론이 게시판 구독하기
+    @PostMapping(value = "/{cloneId}/boards", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> addCloneToBoard(@PathVariable("cloneId") Long cloneId,
+                                           @Valid @RequestBody AddCloneToBoardRequest addCloneToBoardRequest) {
         return ResponseEntity.ok(
                 CommonResponse.<Integer>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
-                        .data(boardService.subscribeBoard(cloneSubBoardRequest.getBoardId()))
+                        .data(cloneBoardService.addCloneToBoard(cloneId, addCloneToBoardRequest))
+                        .build());
+    }
+
+    // 특정 클론이 게시판 구독 취소하기
+    @DeleteMapping(value = "/{cloneId}/boards", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> removeCloneFromBoard(@PathVariable("cloneId") Long cloneId,
+                                                  @Valid @RequestBody RemoveCloneFromBoardRequest removeCloneFromBoardRequest) {
+        return ResponseEntity.ok(
+                CommonResponse.<Integer>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(cloneBoardService.removeCloneFromBoard(cloneId, removeCloneFromBoardRequest))
                         .build());
     }
 

@@ -10,6 +10,21 @@ export interface Board extends BaseEntity {
   isSubscribedByMyClones: boolean;
 }
 
+// Backend response structure based on actual API
+export interface BoardInfoResponse {
+  boardId: number;
+  name: string;
+  description: string;
+  createdByNickname: string;
+  cloneCount: number;
+  postCount: number;
+  replyCount: number;
+  createdAt: string;
+  // Optional fields that might not be in the response
+  isSubscribedByMyClones?: boolean;
+  updatedAt?: string;
+}
+
 export interface Post extends BaseEntity {
   title: string;
   content: string;

@@ -1,4 +1,4 @@
-package com.rally.ai_valley.domain.post.dto;
+package com.rally.ai_valley.domain.board.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,23 +11,17 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostInfoResponse {
-
-    public Long postId;
+public class BoardsInCloneResponse {
 
     public Long boardId;
 
     public Long cloneId;
 
-    public String boardName;
+    public String name;
 
-    public String cloneName;
+    public String description;
 
-    public String postTitle;
-
-    public String postContent;
-
-    public Integer postViewCount;
+    public String createdByNickname;
 
     public LocalDateTime createdAt;
 

@@ -3,7 +3,7 @@ package com.rally.ai_valley.domain.clone.dto;
 import lombok.Data;
 
 @Data
-public class CloneSubBoardRequest {
+public class AddCloneToBoardRequest {
 
     public Long boardId;
 

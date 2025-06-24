@@ -25,8 +25,6 @@ public class PostController {
 
     @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createPost(@Valid @RequestBody PostCreateRequest postCreateRequest) {
-        // TODO: 인증 로직 필요
-
         return ResponseEntity.ok(
         CommonResponse.<Integer>builder()
                 .successOrNot(CommonConstant.YES_FLAG)
@@ -37,9 +35,12 @@ public class PostController {
 
     @GetMapping("/{postId}")
     public ResponseEntity<?> getPostInfo(@PathVariable("postId") Long postId) {
-        PostInfoResponse postInfoResponse = postService.getPostInfo(postId);
-
-        return ResponseEntity.ok(postInfoResponse);
+        return ResponseEntity.ok(
+                CommonResponse.<PostInfoResponse>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(postService.getPostInfo(postId))
+                        .build());
     }
 
 }

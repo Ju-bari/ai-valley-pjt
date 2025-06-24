@@ -5,22 +5,57 @@ import { Badge } from '../../../shared/components/ui/badge';
 import { Button } from '../../../shared/components/ui/button';
 import Layout from '../../../shared/components/Layout';
 import { useState, useEffect } from 'react';
-import { getMyClones } from '../services/cloneService';
-import { type CloneInfoResponse } from '../types';
+import { getMyClones, getCloneStatistics, getCloneBoards } from '../services/cloneService';
+import { type CloneInfoResponse, type CloneStatisticsResponse } from '../types';
+
+interface CloneWithStats extends CloneInfoResponse {
+  statistics?: CloneStatisticsResponse;
+  boardCount?: number;
+}
 
 function ClonesPage() {
-  const [clones, setClones] = useState<CloneInfoResponse[]>([]);
+  const [clones, setClones] = useState<CloneWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchClones = async () => {
+    const fetchClonesWithStats = async () => {
       try {
         setLoading(true);
         setError(null);
         
+        // First, get the list of clones
         const clonesData = await getMyClones();
-        setClones(clonesData);
+        
+        // Then, fetch statistics and board count for each clone in parallel
+        const clonesWithStats = await Promise.all(
+          clonesData.map(async (clone) => {
+            try {
+              const [statisticsResult, boardsResult] = await Promise.allSettled([
+                getCloneStatistics(clone.cloneId),
+                getCloneBoards(clone.cloneId)
+              ]);
+
+              const statistics = statisticsResult.status === 'fulfilled' ? statisticsResult.value : undefined;
+              const boardCount = boardsResult.status === 'fulfilled' ? boardsResult.value.length : 0;
+
+              return {
+                ...clone,
+                statistics,
+                boardCount
+              };
+            } catch (err) {
+              // If individual clone stats fail, still return the clone with default values
+              return {
+                ...clone,
+                statistics: undefined,
+                boardCount: 0
+              };
+            }
+          })
+        );
+        
+        setClones(clonesWithStats);
       } catch (err) {
         setError('클론 목록을 불러오는데 실패했습니다.');
       } finally {
@@ -28,7 +63,7 @@ function ClonesPage() {
       }
     };
 
-    fetchClones();
+    fetchClonesWithStats();
   }, []);
 
   if (loading) {
@@ -38,7 +73,7 @@ function ClonesPage() {
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin text-fuchsia-400 mx-auto mb-4" />
-              <p className="text-gray-300">클론 목록을 불러오는 중...</p>
+              <p className="text-white">클론 목록을 불러오는 중...</p>
             </div>
           </div>
         </div>
@@ -97,9 +132,9 @@ function ClonesPage() {
         {/* Empty State */}
         {clones.length === 0 ? (
           <div className="text-center py-16">
-            <Bot className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-300 mb-2">아직 생성된 클론이 없습니다</h3>
-            <p className="text-gray-400 mb-6">첫 번째 AI 클론을 만들어보세요!</p>
+            <Bot className="h-16 w-16 text-white/60 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">아직 생성된 클론이 없습니다</h3>
+            <p className="text-white/80 mb-6">첫 번째 AI 클론을 만들어보세요!</p>
             <Link to="/clones/create">
               <Button className="bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 text-fuchsia-300 border border-fuchsia-500/30 hover:from-fuchsia-500/30 hover:to-purple-500/30">
                 <Bot className="h-4 w-4 mr-2" />
@@ -148,28 +183,34 @@ function ClonesPage() {
                   
                   <CardContent className="pt-0">
                     {/* Description */}
-                    <p className="text-gray-300 text-sm mb-4 leading-relaxed">
+                    <p className="text-white/90 text-sm mb-4 leading-relaxed">
                       {clone.description}
                     </p>
                     
-                    {/* Stats Grid - Placeholder data since backend doesn't provide these yet */}
+                    {/* Stats Grid with real data */}
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
                         <Users className="h-4 w-4 mx-auto mb-1 text-blue-400" />
-                        <div className="text-lg font-bold text-white">-</div>
-                        <div className="text-xs text-gray-400">구독 게시판</div>
+                        <div className="text-lg font-bold text-white">
+                          {clone.boardCount ?? 0}
+                        </div>
+                        <div className="text-xs text-white/80">참여 게시판</div>
                       </div>
                       
                       <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
                         <FileText className="h-4 w-4 mx-auto mb-1 text-purple-400" />
-                        <div className="text-lg font-bold text-white">-</div>
-                        <div className="text-xs text-gray-400">작성 게시글</div>
+                        <div className="text-lg font-bold text-white">
+                          {clone.statistics?.postCount ?? 0}
+                        </div>
+                        <div className="text-xs text-white/80">작성 게시글</div>
                       </div>
                       
                       <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
                         <MessageSquare className="h-4 w-4 mx-auto mb-1 text-green-400" />
-                        <div className="text-lg font-bold text-white">-</div>
-                        <div className="text-xs text-gray-400">작성 댓글</div>
+                        <div className="text-lg font-bold text-white">
+                          {clone.statistics?.replyCount ?? 0}
+                        </div>
+                        <div className="text-xs text-white/80">작성 댓글</div>
                       </div>
                     </div>
                   </CardContent>

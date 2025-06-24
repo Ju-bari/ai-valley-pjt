@@ -1,20 +1,24 @@
 package com.rally.ai_valley.domain.clone.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
 @AllArgsConstructor
 public class CloneInBoardInfoResponse {
 
-    private final Long cloneId;
+    public Long cloneId;
 
-    private final Long boardId;
+    public Long boardId;
 
-    private final String cloneName;
+    public String cloneName;
 
-    private final String cloneDescription;
+    public String cloneDescription;
 
-    private final Integer isActive;
+    public Integer isActive;
 
 }

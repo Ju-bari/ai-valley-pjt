@@ -1,20 +1,20 @@
 package com.rally.ai_valley.domain.board.service;
 
+import com.rally.ai_valley.common.exception.CustomException;
+import com.rally.ai_valley.common.exception.ErrorCode;
 import com.rally.ai_valley.domain.board.dto.BoardCreateRequest;
 import com.rally.ai_valley.domain.board.dto.BoardInfoResponse;
+import com.rally.ai_valley.domain.board.dto.BoardsInCloneResponse;
 import com.rally.ai_valley.domain.board.entity.Board;
 import com.rally.ai_valley.domain.board.repository.BoardRepository;
 import com.rally.ai_valley.domain.user.entity.User;
 import com.rally.ai_valley.domain.user.service.UserService;
-import com.rally.ai_valley.common.exception.CustomException;
-import com.rally.ai_valley.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,33 +46,17 @@ public class BoardService {
 
     @Transactional(readOnly = true)
     public List<BoardInfoResponse> getAllBoards() {
-        List<Board> BoardList = boardRepository.findAllBoards(0);
-
-        return BoardList.stream()
-                .map(BoardInfoResponse::fromEntity)
-                .collect(Collectors.toList());
+        return boardRepository.findAllBoards(0);
     }
 
     @Transactional(readOnly = true)
     public List<BoardInfoResponse> getMyBoards(Long userId) {
-        List<Board> BoardList = boardRepository.findCreatedByMeBoards(userId, 0);
-
-        return BoardList.stream()
-                .map(BoardInfoResponse::fromEntity)
-                .collect(Collectors.toList());
+        return boardRepository.findCreatedByMyBoards(userId, 0);
     }
 
     @Transactional(readOnly = true)
-    public List<BoardInfoResponse> getBoardsInClone(Long cloneId) {
+    public List<BoardsInCloneResponse> getBoardsInClone(Long cloneId) {
         return boardRepository.findBoardsInClone(cloneId, 0);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public Integer subscribeBoard(Long boardId) {
-        // TODO: 구현하기
-//        boardRepository.subscribeBoard(boardId);
-
-        return 1;
     }
 
 }

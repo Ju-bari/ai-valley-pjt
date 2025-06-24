@@ -1,12 +1,13 @@
-import { api } from '../../../shared/utils/api';
-import { type CloneInfoResponse, type CloneCreateRequest, type CloneInfoUpdateRequest, type BoardInfoResponse, type PostInfoResponse } from '../types';
+import { api, API_BASE_URL } from '../../../shared/utils/api';
+import { type CloneInfoResponse, type CloneCreateRequest, type CloneInfoUpdateRequest, type BoardInfoResponse, type PostInfoResponse, type CloneStatisticsResponse, type AddCloneToBoardRequest, type RemoveCloneFromBoardRequest } from '../types';
 
 // Clone API endpoints
 const ENDPOINTS = {
-  CLONES: '/clones',
+  CLONES: '/clones/',
   CLONE_BY_ID: (cloneId: number) => `/clones/${cloneId}`,
   CLONE_BOARDS: (cloneId: number) => `/clones/${cloneId}/boards`,
   CLONE_POSTS: (cloneId: number) => `/clones/${cloneId}/posts`,
+  CLONE_STATISTICS: (cloneId: number) => `/clones/${cloneId}/statistics`,
   MY_CLONES: '/users/me/clones', // 실제 백엔드 엔드포인트
 } as const;
 
@@ -18,29 +19,15 @@ export class CloneService {
   /**
    * Create new clone
    */
-  static async createClone(cloneData: CloneCreateRequest): Promise<void> {
-    return api.post<void>(ENDPOINTS.CLONES, cloneData);
+  static async createClone(cloneData: CloneCreateRequest): Promise<number> {
+    return api.post<number>(ENDPOINTS.CLONES, cloneData);
   }
 
   /**
    * Get clone info by ID
    */
   static async getCloneById(cloneId: number): Promise<CloneInfoResponse> {
-    try {
-      const result = await api.get<CloneInfoResponse>(ENDPOINTS.CLONE_BY_ID(cloneId));
-      return result;
-    } catch (error) {
-      // 임시 목업 데이터 (백엔드 문제 진단용)
-      const mockClone: CloneInfoResponse = {
-        cloneId: cloneId,
-        userId: 1,
-        name: `Mock Clone ${cloneId}`,
-        description: `이것은 클론 ID ${cloneId}의 임시 목업 데이터입니다. 백엔드 서버를 확인해주세요.`,
-        isActive: 1 // 기본값: 활성화
-      };
-      
-      return mockClone;
-    }
+    return api.get<CloneInfoResponse>(ENDPOINTS.CLONE_BY_ID(cloneId));
   }
 
   /**
@@ -61,54 +48,28 @@ export class CloneService {
    * Get boards associated with a clone
    */
   static async getCloneBoards(cloneId: number): Promise<BoardInfoResponse[]> {
-    try {
-      const result = await api.get<BoardInfoResponse[]>(ENDPOINTS.CLONE_BOARDS(cloneId));
-      return result;
-    } catch (error) {
-      return [];
-    }
+    return api.get<BoardInfoResponse[]>(ENDPOINTS.CLONE_BOARDS(cloneId));
   }
 
   /**
    * Get posts written by a clone
    */
   static async getClonePosts(cloneId: number): Promise<PostInfoResponse[]> {
-    try {
-      const result = await api.get<PostInfoResponse[]>(ENDPOINTS.CLONE_POSTS(cloneId));
-      return result;
-    } catch (error) {
-      return [];
-    }
+    return api.get<PostInfoResponse[]>(ENDPOINTS.CLONE_POSTS(cloneId));
+  }
+
+  /**
+   * Get clone statistics
+   */
+  static async getCloneStatistics(cloneId: number): Promise<CloneStatisticsResponse> {
+    return api.get<CloneStatisticsResponse>(ENDPOINTS.CLONE_STATISTICS(cloneId));
   }
 
   /**
    * Get my clones (current user's clones)
    */
   static async getMyClones(): Promise<CloneInfoResponse[]> {
-    try {
-      const result = await api.get<CloneInfoResponse[]>(ENDPOINTS.MY_CLONES);
-      return result;
-    } catch (error) {
-      // 임시 목업 데이터 (백엔드 문제 진단용)
-      const mockData: CloneInfoResponse[] = [
-        {
-          cloneId: 1,
-          userId: 1,
-          name: "Helpful Assistant Clone",
-          description: "도움이 되는 AI 어시스턴트입니다.",
-          isActive: 1
-        },
-        {
-          cloneId: 2,
-          userId: 1,
-          name: "Creative Writer Clone",
-          description: "창작 활동을 도와주는 AI입니다.",
-          isActive: 0
-        }
-      ];
-      
-      return mockData;
-    }
+    return api.get<CloneInfoResponse[]>(ENDPOINTS.MY_CLONES);
   }
 
   /**
@@ -121,6 +82,41 @@ export class CloneService {
     // In the future, this could be a separate endpoint for public/featured clones
     return this.getMyClones();
   }
+
+  /**
+   * Subscribe clone to a board
+   */
+  static async subscribeCloneToBoard(cloneId: number, boardId: number): Promise<void> {
+    const requestData: AddCloneToBoardRequest = { boardId };
+    const endpoint = ENDPOINTS.CLONE_BOARDS(cloneId);
+    
+    console.log(`API Call: POST ${endpoint}`);
+    console.log('Request data:', requestData);
+    console.log('Full URL:', `${API_BASE_URL}${endpoint}`);
+    
+    try {
+      const result = await api.post<void>(endpoint, requestData);
+      console.log('Subscription API response:', result);
+      return result;
+    } catch (error) {
+      console.error('Subscription API error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Unsubscribe clone from a board
+   */
+  static async unsubscribeCloneFromBoard(cloneId: number, boardId: number): Promise<void> {
+    const requestData: RemoveCloneFromBoardRequest = { boardId };
+    // DELETE 요청에 body를 포함하기 위해 직접 apiRequest 사용
+    return api.delete<void>(ENDPOINTS.CLONE_BOARDS(cloneId), {
+      body: JSON.stringify(requestData),
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+  }
 }
 
 // Export convenience functions
@@ -130,5 +126,8 @@ export const updateCloneInfo = CloneService.updateCloneInfo;
 export const deleteClone = CloneService.deleteClone;
 export const getCloneBoards = CloneService.getCloneBoards;
 export const getClonePosts = CloneService.getClonePosts;
+export const getCloneStatistics = CloneService.getCloneStatistics;
 export const getMyClones = CloneService.getMyClones;
-export const getAllClones = CloneService.getAllClones; 
+export const getAllClones = CloneService.getAllClones;
+export const subscribeCloneToBoard = CloneService.subscribeCloneToBoard;
+export const unsubscribeCloneFromBoard = CloneService.unsubscribeCloneFromBoard; 
