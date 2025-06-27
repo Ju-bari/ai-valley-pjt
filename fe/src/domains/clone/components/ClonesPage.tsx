@@ -1,22 +1,25 @@
 import { Bot, MessageSquare, Users, FileText, ArrowLeft, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
 import { Badge } from '../../../shared/components/ui/badge';
 import { Button } from '../../../shared/components/ui/button';
 import Layout from '../../../shared/components/Layout';
 import { useState, useEffect } from 'react';
-import { getMyClones, getCloneStatistics, getCloneBoards } from '../services/cloneService';
-import { type CloneInfoResponse, type CloneStatisticsResponse } from '../types';
+import { getMyClones, getCloneStatistics, getCloneBoards, getClonePosts } from '../services/cloneService';
+import { type CloneInfoResponse, type CloneStatisticsResponse, type BoardInfoResponse, type PostInfoResponse } from '../types';
 
 interface CloneWithStats extends CloneInfoResponse {
   statistics?: CloneStatisticsResponse;
   boardCount?: number;
+  boards?: BoardInfoResponse[];
+  posts?: PostInfoResponse[];
 }
 
 function ClonesPage() {
   const [clones, setClones] = useState<CloneWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchClonesWithStats = async () => {
@@ -27,29 +30,35 @@ function ClonesPage() {
         // First, get the list of clones
         const clonesData = await getMyClones();
         
-        // Then, fetch statistics and board count for each clone in parallel
+        // Then, fetch statistics, boards, and posts for each clone in parallel
         const clonesWithStats = await Promise.all(
           clonesData.map(async (clone) => {
             try {
-              const [statisticsResult, boardsResult] = await Promise.allSettled([
+              const [statisticsResult, boardsResult, postsResult] = await Promise.allSettled([
                 getCloneStatistics(clone.cloneId),
-                getCloneBoards(clone.cloneId)
+                getCloneBoards(clone.cloneId),
+                getClonePosts(clone.cloneId)
               ]);
 
               const statistics = statisticsResult.status === 'fulfilled' ? statisticsResult.value : undefined;
-              const boardCount = boardsResult.status === 'fulfilled' ? boardsResult.value.length : 0;
+              const boards = boardsResult.status === 'fulfilled' ? boardsResult.value : [];
+              const posts = postsResult.status === 'fulfilled' ? postsResult.value : [];
 
               return {
                 ...clone,
                 statistics,
-                boardCount
+                boardCount: boards.length,
+                boards,
+                posts
               };
             } catch (err) {
               // If individual clone stats fail, still return the clone with default values
               return {
                 ...clone,
                 statistics: undefined,
-                boardCount: 0
+                boardCount: 0,
+                boards: [],
+                posts: []
               };
             }
           })
@@ -57,7 +66,7 @@ function ClonesPage() {
         
         setClones(clonesWithStats);
       } catch (err) {
-        setError('클론 목록을 불러오는데 실패했습니다.');
+        setError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
       } finally {
         setLoading(false);
       }
@@ -66,14 +75,55 @@ function ClonesPage() {
     fetchClonesWithStats();
   }, []);
 
+  // Handle board click - navigate to first board or show boards list
+  const handleBoardClick = (clone: CloneWithStats, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (clone.boards && clone.boards.length > 0) {
+      // If clone has boards, navigate to the first board's posts
+      navigate(`/boards/${clone.boards[0].boardId}/posts`);
+    } else {
+      // If no boards, navigate to boards page
+      navigate('/boards');
+    }
+  };
+
+  // Handle post click - navigate to first post or show posts
+  const handlePostClick = (clone: CloneWithStats, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (clone.posts && clone.posts.length > 0) {
+      // If clone has posts, navigate to the first post
+      const firstPost = clone.posts[0];
+      navigate(`/boards/${firstPost.boardId}/posts/${firstPost.postId}`);
+    } else {
+      // If no posts, navigate to boards page to create posts
+      navigate('/boards');
+    }
+  };
+
   if (loading) {
     return (
       <Layout currentPage="clones">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-fuchsia-400 mx-auto mb-4" />
-              <p className="text-white">클론 목록을 불러오는 중...</p>
+          <div className="flex items-center gap-4 mb-8">
+            <Link 
+              to="/" 
+              className="p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              나의 AI 클론 목록
+            </h1>
+          </div>
+          
+          <div className="text-center py-12">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto border border-white/20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+              <p className="text-gray-400">클론 목록을 불러오는 중...</p>
             </div>
           </div>
         </div>
@@ -85,12 +135,26 @@ function ClonesPage() {
     return (
       <Layout currentPage="clones">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <p className="text-red-400 mb-4">{error}</p>
+          <div className="flex items-center gap-4 mb-8">
+            <Link 
+              to="/" 
+              className="p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              나의 AI 클론 목록
+            </h1>
+          </div>
+          
+          <div className="text-center py-12">
+            <div className="bg-red-500/10 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto border border-red-500/20">
+              <Bot className="h-12 w-12 mx-auto mb-4 text-red-400" />
+              <h3 className="text-xl font-semibold text-white mb-2">오류가 발생했습니다</h3>
+              <p className="text-red-300 mb-4">{error}</p>
               <Button 
-                onClick={() => window.location.reload()}
-                className="bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 text-fuchsia-300 border border-fuchsia-500/30 hover:from-fuchsia-500/30 hover:to-purple-500/30"
+                onClick={() => window.location.reload()} 
+                className="bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30"
               >
                 다시 시도
               </Button>
@@ -189,7 +253,11 @@ function ClonesPage() {
                     
                     {/* Stats Grid with real data */}
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
+                      <div 
+                        className="bg-white/5 rounded-lg p-3 text-center border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
+                        onClick={(e) => handleBoardClick(clone, e)}
+                        title="참여 게시판 보기"
+                      >
                         <Users className="h-4 w-4 mx-auto mb-1 text-blue-400" />
                         <div className="text-lg font-bold text-white">
                           {clone.boardCount ?? 0}
@@ -197,7 +265,11 @@ function ClonesPage() {
                         <div className="text-xs text-white/80">참여 게시판</div>
                       </div>
                       
-                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
+                      <div 
+                        className="bg-white/5 rounded-lg p-3 text-center border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
+                        onClick={(e) => handlePostClick(clone, e)}
+                        title="작성 게시글 보기"
+                      >
                         <FileText className="h-4 w-4 mx-auto mb-1 text-purple-400" />
                         <div className="text-lg font-bold text-white">
                           {clone.statistics?.postCount ?? 0}

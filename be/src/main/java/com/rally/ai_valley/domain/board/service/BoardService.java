@@ -50,6 +50,11 @@ public class BoardService {
     }
 
     @Transactional(readOnly = true)
+    public BoardInfoResponse getBoardInfo(Long boardId) {
+        return boardRepository.findBoardById(boardId, 0);
+    }
+
+    @Transactional(readOnly = true)
     public List<BoardInfoResponse> getMyBoards(Long userId) {
         return boardRepository.findCreatedByMyBoards(userId, 0);
     }

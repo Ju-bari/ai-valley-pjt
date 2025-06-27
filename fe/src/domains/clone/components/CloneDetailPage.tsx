@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, ArrowLeft, Edit, Save, X, MessageSquare, FileText, Users, Calendar, User, Loader2, Power, Eye, UserMinus, UserPlus, Check, Bell, BellOff } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
 import { Badge } from '../../../shared/components/ui/badge';
 import { Button } from '../../../shared/components/ui/button';
@@ -11,6 +11,7 @@ import { type CloneInfoResponse, type BoardInfoResponse, type PostInfoResponse, 
 
 function CloneDetailPage() {
   const { cloneId } = useParams<{ cloneId: string }>();
+  const navigate = useNavigate();
   const [clone, setClone] = useState<CloneInfoResponse | null>(null);
   const [boards, setBoards] = useState<BoardInfoResponse[]>([]);
   const [posts, setPosts] = useState<PostInfoResponse[]>([]);
@@ -194,6 +195,18 @@ function CloneDetailPage() {
   // 현재 구독된 게시판 수 계산
   const getSubscribedBoardCount = () => {
     return Object.values(boardSubscriptions).filter(isSubscribed => isSubscribed).length;
+  };
+
+  // Handle board click - navigate to board posts
+  const handleBoardClick = (boardId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/boards/${boardId}/posts`);
+  };
+
+  // Handle post click - navigate to post detail
+  const handlePostClick = (post: PostInfoResponse, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/boards/${post.boardId}/posts/${post.postId}`);
   };
 
   if (loading) {
@@ -412,11 +425,14 @@ function CloneDetailPage() {
                       const isLoading = subscriptionLoading[boardKey] || false;
                       
                       return (
-                        <div key={`${board.boardId}-${board.cloneId}`} className="bg-white/5 rounded-lg p-3 border border-white/10">
-                          <div className="flex items-start justify-between mb-2">
+                        <div key={`${board.boardId}-${board.cloneId}`} className="bg-white/5 rounded-lg p-3 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group">
+                          <div 
+                            className="flex items-start justify-between mb-2"
+                            onClick={(e) => handleBoardClick(board.boardId, e)}
+                          >
                             <div className="flex-1">
-                              <h4 className="font-medium text-purple-300">{board.name}</h4>
-                              <p className="text-sm text-white/80 mt-1">{board.description}</p>
+                              <h4 className="font-medium text-purple-300 group-hover:text-purple-200 transition-colors">{board.name}</h4>
+                              <p className="text-sm text-white/80 mt-1 group-hover:text-white/90 transition-colors">{board.description}</p>
                             </div>
                             <div className="flex items-center gap-2 ml-2">
                               <span className={`text-xs font-medium transition-colors duration-200 ${
@@ -425,7 +441,10 @@ function CloneDetailPage() {
                                 {isSubscribed ? '구독중' : '구독해제'}
                               </span>
                               <button
-                                onClick={() => handleBoardSubscriptionToggle(board.boardId, isSubscribed)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBoardSubscriptionToggle(board.boardId, isSubscribed);
+                                }}
                                 disabled={isLoading}
                                 className={`relative group flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 ${
                                   isSubscribed
@@ -476,18 +495,22 @@ function CloneDetailPage() {
                 {posts.length > 0 ? (
                   <div className="space-y-3">
                     {posts.map((post) => (
-                      <div key={post.postId} className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition-colors duration-200">
+                      <div 
+                        key={post.postId} 
+                        className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition-colors duration-200 cursor-pointer group"
+                        onClick={(e) => handlePostClick(post, e)}
+                      >
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-white flex-1">{post.postTitle}</h4>
-                          <div className="flex items-center gap-1 text-xs text-white/80 ml-2">
+                          <h4 className="font-medium text-white flex-1 group-hover:text-blue-200 transition-colors">{post.postTitle}</h4>
+                          <div className="flex items-center gap-1 text-xs text-white/80 ml-2 group-hover:text-white/90 transition-colors">
                             <Eye className="h-3 w-3" />
                             <span>{post.postViewCount}</span>
                           </div>
                         </div>
-                        <p className="text-sm text-white/90 mb-3 line-clamp-2">{post.postContent}</p>
+                        <p className="text-sm text-white/90 mb-3 line-clamp-2 group-hover:text-white transition-colors">{post.postContent}</p>
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-fuchsia-300">{post.boardName}</span>
-                          <span className="text-white/80">{formatDate(post.createdAt)}</span>
+                          <span className="text-fuchsia-300 group-hover:text-fuchsia-200 transition-colors">{post.boardName}</span>
+                          <span className="text-white/80 group-hover:text-white/90 transition-colors">{formatDate(post.createdAt)}</span>
                         </div>
                       </div>
                     ))}

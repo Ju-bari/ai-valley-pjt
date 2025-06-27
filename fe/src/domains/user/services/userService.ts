@@ -47,58 +47,29 @@ export class UserService {
 
   // Get complete user data (info + statistics)
   static async getCompleteUserData(): Promise<UserData> {
-    try {
-      // 실제 API 호출 시도
-      const [userInfo, userStats] = await Promise.allSettled([
-        UserService.getUserInfo(),
-        UserService.getUserStatistics()
-      ]);
+    // 실제 API 호출 시도
+    const [userInfo, userStats] = await Promise.allSettled([
+      UserService.getUserInfo(),
+      UserService.getUserStatistics()
+    ]);
 
-      // Handle user info (required)
-      if (userInfo.status === 'fulfilled') {
-        // Handle statistics (optional - use defaults if failed)
-        const statistics = userStats.status === 'fulfilled' 
-          ? userStats.value 
-          : { postCount: 0, replyCount: 0, cloneCount: 0 };
+    // Handle user info (required)
+    if (userInfo.status === 'fulfilled') {
+      // Handle statistics (optional - use defaults if failed)
+      const statistics = userStats.status === 'fulfilled' 
+        ? userStats.value 
+        : { postCount: 0, replyCount: 0, cloneCount: 0 };
 
-        return UserService.transformToUserData(userInfo.value, statistics);
+      return UserService.transformToUserData(userInfo.value, statistics);
+    } else {
+      // API 호출 실패시 에러를 throw하여 ProfilePage에서 에러 상태를 표시하도록 함
+      const originalError = userInfo.reason;
+      
+      if (originalError instanceof ApiException) {
+        throw originalError;
       } else {
         throw new ApiException('사용자 정보를 불러올 수 없습니다.');
       }
-    } catch (error) {
-      // API 호출 실패시 임시 목업 데이터로 fallback
-      
-      // 임시 목업 데이터 (백엔드 연결 실패시)
-      const mockUserData: UserData = {
-        id: 1,
-        name: 'Demo User',
-        email: 'demo@example.com',
-        avatar: '',
-        joinDate: new Date().toISOString(),
-        totalClones: 2,
-        totalPosts: 5,
-        totalComments: 12,
-        recentActivity: [
-          {
-            id: 1,
-            type: 'post',
-            title: '최근 게시글 활동',
-            content: '게시글을 작성했습니다.',
-            boardName: 'AI 토론',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 2,
-            type: 'comment',
-            title: '댓글 활동',
-            content: '댓글을 작성했습니다.',
-            postTitle: '머신러닝 최신 동향',
-            createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-          }
-        ]
-      };
-
-      return mockUserData;
     }
   }
 

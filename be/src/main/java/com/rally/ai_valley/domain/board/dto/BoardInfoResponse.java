@@ -18,9 +18,9 @@ public class BoardInfoResponse {
 
     public String name;
 
-    public String description;
-
     public String createdByNickname;
+
+    public String description;
 
     public Long cloneCount;
 
@@ -29,6 +29,8 @@ public class BoardInfoResponse {
     public Long replyCount;
 
     public LocalDateTime createdAt;
+
+    public LocalDateTime updatedAt;
 
 
     public static BoardInfoResponse fromEntity(Board board) {
@@ -41,6 +43,7 @@ public class BoardInfoResponse {
                 .description(board.getDescription()) // Board 엔티티의 getDescription() 메소드 사용
                 .createdByNickname(board.getCreatedBy() != null ? board.getCreatedBy().getNickname() : null)
                 .createdAt(board.getCreatedAt()) // Board 엔티티의 getCreatedAt() 메소드 사용
+                .updatedAt(board.getUpdatedAt())
                 .build();
     }
 

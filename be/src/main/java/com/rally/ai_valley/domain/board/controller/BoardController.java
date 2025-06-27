@@ -14,7 +14,6 @@ import com.rally.ai_valley.domain.post.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,6 +51,16 @@ public class BoardController {
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(boardService.getAllBoards())
+                        .build());
+    }
+
+    @GetMapping("/{boardId}")
+    public ResponseEntity<?> getBoardById(@PathVariable("boardId") Long boardId) {
+        return ResponseEntity.ok(
+                CommonResponse.<BoardInfoResponse>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(boardService.getBoardInfo(boardId))
                         .build());
     }
 

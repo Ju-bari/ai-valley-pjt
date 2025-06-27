@@ -57,8 +57,18 @@ export async function apiRequest<T>(
     const response = await fetch(url, defaultOptions);
     
     if (!response.ok) {
+      // Handle specific HTTP status codes with user-friendly messages
+      let errorMessage: string;
+      if (response.status >= 500) {
+        errorMessage = '서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.';
+      } else if (response.status >= 400) {
+        errorMessage = '요청을 처리할 수 없습니다. 잠시 후 다시 시도해주세요.';
+      } else {
+        errorMessage = `HTTP error! status: ${response.status}`;
+      }
+      
       throw new ApiException(
-        `HTTP error! status: ${response.status}`,
+        errorMessage,
         response.status
       );
     }
@@ -80,8 +90,20 @@ export async function apiRequest<T>(
     if (error instanceof ApiException) {
       throw error;
     }
+    
+    // Handle network errors with user-friendly messages
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch')) {
+        throw new ApiException('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
+      } else if (error.message.includes('NetworkError')) {
+        throw new ApiException('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      } else if (error.message.includes('timeout')) {
+        throw new ApiException('요청 시간이 초과되었습니다. 다시 시도해주세요.');
+      }
+    }
+    
     throw new ApiException(
-      error instanceof Error ? error.message : 'Unknown API error'
+      error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
     );
   }
 }

@@ -123,7 +123,7 @@ function AboutPage() {
         <div className="mb-6">
           <Link 
             to="/"
-            className="inline-flex items-center gap-2 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="text-sm">홈으로 돌아가기</span>

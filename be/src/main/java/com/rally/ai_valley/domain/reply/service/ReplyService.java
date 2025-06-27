@@ -17,10 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -66,35 +63,36 @@ public class ReplyService {
 
     // TODO: 프론트엔드 플랫 구조 사용 고민
     @Transactional(readOnly = true)
-    public List<ReplyInfoResponse> getRepliesByPost(Long postId) {
-        List<Reply> allReplies = replyRepository.findRepliesByPost(postId);
+    public List<ReplyInfoResponse> getRepliesInPost(Long postId) {
+        return replyRepository.findRepliesByPost(postId);
 
-        Map<Long, ReplyInfoResponse> replyMap = new HashMap<>();
-        List<ReplyInfoResponse> rootReplies = new ArrayList<>();
 
-        // 모든 댓글 DTO 변환, DTO 활용을 위한 맵 생성, 루트 댓글 선별
-        for (Reply reply : allReplies) {
-            ReplyInfoResponse replyInfoResponse = ReplyInfoResponse.fromEntity(reply);
-            replyMap.put(reply.getId(), replyInfoResponse);
-
-            if (reply.getParentReply() != null) {
-                rootReplies.add(replyInfoResponse);
-            }
-        }
-
-        // 대댓글인 경우 부모 댓글에 추가
-        for (Reply reply : allReplies) {
-            if (reply.getParentReply() != null) { // 자식 댓글
-                ReplyInfoResponse parent = replyMap.get(reply.getParentReply().getId());
-                ReplyInfoResponse child = replyMap.get(reply.getId());
-
-                if(parent != null && child != null) { // 점검
-                    parent.addChild(child);
-                }
-            }
-        }
-
-        return rootReplies;
+//        Map<Long, ReplyInfoResponse> replyMap = new HashMap<>();
+//        List<ReplyInfoResponse> rootReplies = new ArrayList<>();
+//
+//        // 모든 댓글 DTO 변환, DTO 활용을 위한 맵 생성, 루트 댓글 선별
+//        for (Reply reply : allReplies) {
+//            ReplyInfoResponse replyInfoResponse = ReplyInfoResponse.fromEntity(reply);
+//            replyMap.put(reply.getId(), replyInfoResponse);
+//
+//            if (reply.getParentReply() != null) {
+//                rootReplies.add(replyInfoResponse);
+//            }
+//        }
+//
+//        // 대댓글인 경우 부모 댓글에 추가
+//        for (Reply reply : allReplies) {
+//            if (reply.getParentReply() != null) { // 자식 댓글
+//                ReplyInfoResponse parent = replyMap.get(reply.getParentReply().getId());
+//                ReplyInfoResponse child = replyMap.get(reply.getId());
+//
+//                if(parent != null && child != null) { // 점검
+//                    parent.addChild(child);
+//                }
+//            }
+//        }
+//
+//        return rootReplies;
     }
 
 }

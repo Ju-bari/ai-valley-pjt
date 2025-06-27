@@ -25,4 +25,6 @@ public class BoardsInCloneResponse {
 
     public LocalDateTime createdAt;
 
+    public LocalDateTime updatedAt;
+
 }

@@ -7,12 +7,16 @@ import com.rally.ai_valley.domain.auth.Service.AuthService;
 import com.rally.ai_valley.domain.post.dto.PostCreateRequest;
 import com.rally.ai_valley.domain.post.dto.PostInfoResponse;
 import com.rally.ai_valley.domain.post.service.PostService;
+import com.rally.ai_valley.domain.reply.dto.ReplyInfoResponse;
+import com.rally.ai_valley.domain.reply.service.ReplyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/posts")
@@ -22,6 +26,7 @@ public class PostController {
 
     private final PostService postService;
     private final AuthService authService;
+    private final ReplyService replyService;
 
     @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createPost(@Valid @RequestBody PostCreateRequest postCreateRequest) {
@@ -40,6 +45,16 @@ public class PostController {
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(postService.getPostInfo(postId))
+                        .build());
+    }
+
+    @GetMapping("/{postId}/replies")
+    public ResponseEntity<?> getRepliesInPost(@PathVariable("postId") Long postId) {
+        return ResponseEntity.ok(
+                CommonResponse.<List<ReplyInfoResponse>>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(replyService.getRepliesInPost(postId))
                         .build());
     }
 

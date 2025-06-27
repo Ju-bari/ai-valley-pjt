@@ -15,10 +15,23 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
 
     @Query("""
             SELECT new com.rally.ai_valley.domain.board.dto.BoardInfoResponse(b.id, b.name, u.nickname, b.description,
-                        (SELECT COUNT(DISTINCT cb.clone.id) FROM CloneBoard cb WHERE cb.isActive = 1),
+                        (SELECT COUNT(DISTINCT cb.clone.id) FROM CloneBoard cb WHERE b.id = cb.board.id AND cb.isActive = 1),
                         (SELECT COUNT(p) FROM Post p WHERE p.board.id = b.id AND p.isDeleted = 0),
                         (SELECT COUNT(r) FROM Reply r INNER JOIN r.post p WHERE p.board.id = b.id AND p.isDeleted = 0 AND r.isDeleted = 0),
-                        b.createdAt)
+                        b.createdAt, b.updatedAt)
+            FROM Board b
+            JOIN b.createdBy u
+            WHERE b.id = :boardId
+                AND b.isDeleted = :isDeleted
+            """)
+    BoardInfoResponse findBoardById(@Param("boardId") Long boardId, @Param("isDeleted") Integer isDeleted);
+
+    @Query("""
+            SELECT new com.rally.ai_valley.domain.board.dto.BoardInfoResponse(b.id, b.name, u.nickname, b.description,
+                        (SELECT COUNT(DISTINCT cb.clone.id) FROM CloneBoard cb WHERE b.id = cb.board.id AND cb.isActive = 1),
+                        (SELECT COUNT(p) FROM Post p WHERE p.board.id = b.id AND p.isDeleted = 0),
+                        (SELECT COUNT(r) FROM Reply r INNER JOIN r.post p WHERE p.board.id = b.id AND p.isDeleted = 0 AND r.isDeleted = 0),
+                        b.createdAt, b.updatedAt)
             FROM Board b
             JOIN b.createdBy u
             WHERE b.isDeleted = :isDeleted
@@ -28,10 +41,10 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
     // 나의 클론들이 속한 게시판들의 모음
     @Query("""
             SELECT new com.rally.ai_valley.domain.board.dto.BoardInfoResponse(b.id, b.name, u.nickname, b.description,
-                        (SELECT COUNT(DISTINCT cb.clone.id) FROM CloneBoard cb WHERE cb.isActive = 1),
+                        (SELECT COUNT(DISTINCT cb.clone.id) FROM CloneBoard cb WHERE b.id = cb.board.id AND cb.isActive = 1),
                         (SELECT COUNT(p) FROM Post p WHERE p.board.id = b.id AND p.isDeleted = 0),
                         (SELECT COUNT(r) FROM Reply r INNER JOIN r.post p WHERE p.board.id = b.id AND p.isDeleted = 0 AND r.isDeleted = 0),
-                        b.createdAt)
+                        b.createdAt, b.updatedAt)
             FROM Board b
             JOIN b.createdBy u
             JOIN b.cloneBoards cb
@@ -42,9 +55,9 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
     List<BoardInfoResponse> findCreatedByMyBoards(@Param("userId") Long userId, @Param("isDeleted") Integer isDeleted);
 
     @Query("""
-            SELECT new com.rally.ai_valley.domain.board.dto.BoardsInCloneResponse(cb.board.id, cb.clone.id, b.name, b.description, u.nickname, b.createdAt)
+            SELECT new com.rally.ai_valley.domain.board.dto.BoardsInCloneResponse(cb.board.id, cb.clone.id, b.name, b.description, u.nickname, b.createdAt, b.updatedAt)
             FROM Board b
-            JOIN CloneBoard cb ON b.id = cb.board.id
+            JOIN CloneBoard cb on cb.board.id = b.id
             JOIN b.createdBy u
             WHERE cb.clone.id = :cloneId
                 AND b.isDeleted = :isDeleted

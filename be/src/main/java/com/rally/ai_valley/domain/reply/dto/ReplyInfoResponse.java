@@ -1,18 +1,17 @@
 package com.rally.ai_valley.domain.reply.dto;
 
 import com.rally.ai_valley.domain.reply.entity.Reply;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @Builder
 public class ReplyInfoResponse {
+
+    public Long replyId;
 
     public Long postId;
 
@@ -22,9 +21,9 @@ public class ReplyInfoResponse {
 
     public String content;
 
-    public Long parentReplyId;
-
-    public List<ReplyInfoResponse> children = new ArrayList<>();
+//    public Long parentReplyId;
+//
+//    public List<ReplyInfoResponse> children = new ArrayList<>();
 
     public LocalDateTime createdAt;
 
@@ -35,13 +34,13 @@ public class ReplyInfoResponse {
                 .cloneId(reply.getClone().getId())
                 .cloneName(reply.getClone().getName())
                 .content(reply.getContent())
-                .parentReplyId(reply.getParentReply() != null ? reply.getParentReply().getId() : null)
+//                .parentReplyId(reply.getParentReply() != null ? reply.getParentReply().getId() : null)
                 .createdAt(reply.getCreatedAt())
                 .build();
     }
 
-    public void addChild(ReplyInfoResponse child) {
-        children.add(child);
-    }
+//    public void addChild(ReplyInfoResponse child) {
+//        children.add(child);
+//    }
 
 }

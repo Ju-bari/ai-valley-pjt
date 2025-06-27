@@ -1,5 +1,5 @@
 import { api } from '../../../shared/utils/api';
-import { type Board, type Post, type Comment, type BoardInfoResponse } from '../types';
+import { type Board, type Post, type Comment, type BoardInfoResponse, type PostInfoResponse, type PostDetailResponse, type ReplyInfoResponse, type Reply, type BoardDetailResponse, type BoardCloneResponse, type ReplyDetailResponse } from '../types';
 
 // Board API endpoints
 const ENDPOINTS = {
@@ -11,6 +11,8 @@ const ENDPOINTS = {
   COMMENT_BY_ID: (id: number) => `/comments/${id}`,
   POSTS_BY_BOARD: (boardId: number) => `/boards/${boardId}/posts`,
   COMMENTS_BY_POST: (postId: number) => `/posts/${postId}/comments`,
+  BOARD_CLONES: (id: number) => `/boards/${id}/clones`,
+  REPLIES_BY_POST: (postId: number) => `/posts/${postId}/replies`,
 } as const;
 
 // Helper function to convert backend response to frontend Board type
@@ -28,6 +30,48 @@ function convertBoardResponse(boardResponse: BoardInfoResponse): Board {
     updatedAt: boardResponse.updatedAt || boardResponse.createdAt,
   };
 }
+
+// Helper function to convert backend post response to frontend Post type
+function convertPostResponse(postResponse: PostInfoResponse): Post {
+  return {
+    id: postResponse.postId,
+    title: postResponse.postTitle,
+    content: postResponse.postContent,
+    author: postResponse.cloneName,
+    boardId: postResponse.boardId,
+    commentCount: 0, // Backend doesn't provide comment count, default to 0
+    likeCount: postResponse.postViewCount, // Use view count as like count for now
+    createdAt: postResponse.createdAt,
+    updatedAt: postResponse.createdAt, // Use createdAt as updatedAt since it's not provided
+  };
+}
+
+// Helper function to convert backend post detail response to frontend Post type
+function convertPostDetailResponse(postResponse: PostDetailResponse): Post {
+  return {
+    id: postResponse.postId,
+    title: postResponse.postTitle,
+    content: postResponse.postContent,
+    author: postResponse.cloneName,
+    boardId: 0, // Not provided in PostDetailResponse
+    commentCount: 0, // Backend doesn't provide comment count, default to 0
+    likeCount: postResponse.postViewCount, // Use view count as like count for now
+    createdAt: postResponse.createdAt,
+    updatedAt: postResponse.createdAt, // Use createdAt as updatedAt since it's not provided
+  };
+}
+
+// Helper function to convert ReplyInfoResponse to Reply
+const convertReplyInfoResponseToReply = (response: ReplyInfoResponse, index: number): Reply => {
+  return {
+    id: index + 1, // Generate ID since not provided in response
+    postId: response.postId,
+    cloneId: response.cloneId,
+    author: response.cloneName,
+    content: response.content,
+    createdAt: response.createdAt
+  };
+};
 
 // Board Service Class
 export class BoardService {
@@ -47,11 +91,13 @@ export class BoardService {
   }
 
   static async getPostById(id: number): Promise<Post> {
-    return api.get<Post>(ENDPOINTS.POST_BY_ID(id));
+    const postResponse = await api.get<PostDetailResponse>(ENDPOINTS.POST_BY_ID(id));
+    return convertPostDetailResponse(postResponse);
   }
 
   static async getPostsByBoard(boardId: number): Promise<Post[]> {
-    return api.get<Post[]>(ENDPOINTS.POSTS_BY_BOARD(boardId));
+    const postResponses = await api.get<PostInfoResponse[]>(ENDPOINTS.POSTS_BY_BOARD(boardId));
+    return postResponses.map(convertPostResponse);
   }
 
   static async createPost(postData: Omit<Post, 'id' | 'createdAt' | 'updatedAt'>): Promise<Post> {
@@ -82,11 +128,41 @@ export class BoardService {
   static async deleteComment(id: number): Promise<void> {
     return api.delete<void>(ENDPOINTS.COMMENT_BY_ID(id));
   }
+
+  // Get replies by post ID with new structure
+  static async getRepliesByPostId(postId: number): Promise<Reply[]> {
+    const replies = await api.get<ReplyDetailResponse[]>(ENDPOINTS.REPLIES_BY_POST(postId));
+    return replies.map(BoardService.convertReplyDetailResponseToReply);
+  }
+
+  // Helper function to convert ReplyDetailResponse to Reply
+  static convertReplyDetailResponseToReply(response: ReplyDetailResponse): Reply {
+    return {
+      id: response.replyId,
+      postId: response.postId,
+      cloneId: response.cloneId,
+      author: response.cloneName,
+      content: response.content,
+      createdAt: response.createdAt
+    };
+  }
+
+  // Get board detail with statistics
+  static async getBoardDetail(id: number): Promise<BoardDetailResponse> {
+    return api.get<BoardDetailResponse>(ENDPOINTS.BOARD_BY_ID(id));
+  }
+
+  // Get board clones
+  static async getBoardClones(id: number): Promise<BoardCloneResponse[]> {
+    return api.get<BoardCloneResponse[]>(ENDPOINTS.BOARD_CLONES(id));
+  }
 }
 
 // Export convenience functions
 export const getBoards = BoardService.getBoards;
 export const getBoardById = BoardService.getBoardById;
+export const getBoardDetail = BoardService.getBoardDetail;
+export const getBoardClones = BoardService.getBoardClones;
 export const getPosts = BoardService.getPosts;
 export const getPostById = BoardService.getPostById;
 export const getPostsByBoard = BoardService.getPostsByBoard;
@@ -96,4 +172,5 @@ export const deletePost = BoardService.deletePost;
 export const getCommentsByPost = BoardService.getCommentsByPost;
 export const createComment = BoardService.createComment;
 export const updateComment = BoardService.updateComment;
-export const deleteComment = BoardService.deleteComment; 
+export const deleteComment = BoardService.deleteComment;
+export const getRepliesByPostId = BoardService.getRepliesByPostId; 
