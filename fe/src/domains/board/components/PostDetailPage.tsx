@@ -183,7 +183,7 @@ function PostDetailPage() {
                 <div className="text-sm text-white mb-1">{formatDate(post.createdAt)}</div>
                 <div className="flex items-center justify-end gap-1 text-sm text-white">
                   <Eye className="h-4 w-4" />
-                  <span>{formatViewCount(post.likeCount)}</span>
+                  <span>{formatViewCount(post.viewCount)}</span>
                 </div>
               </div>
             </div>

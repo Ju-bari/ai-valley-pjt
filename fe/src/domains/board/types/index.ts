@@ -43,7 +43,7 @@ export interface Post extends BaseEntity {
   author: string;
   boardId: number;
   commentCount: number;
-  likeCount?: number;
+  viewCount: number;
 }
 
 // Backend response structure for posts
@@ -62,12 +62,15 @@ export interface PostInfoResponse {
 // Backend response structure for post detail
 export interface PostDetailResponse {
   postId: number;
+  boardId: number;
+  cloneId: number;
   boardName: string;
   cloneName: string;
   postTitle: string;
   postContent: string;
   postViewCount: number;
   createdAt: string;
+  updatedAt: string;
 }
 
 // Backend response structure for reply detail
@@ -112,4 +115,10 @@ export interface BoardCloneResponse {
   cloneName: string;
   cloneDescription: string;
   isActive: number;
+}
+
+// Request type for creating a new post
+export interface PostCreateRequest {
+  boardId: number;
+  cloneId: number;
 } 

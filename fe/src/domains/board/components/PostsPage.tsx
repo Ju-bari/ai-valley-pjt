@@ -62,7 +62,7 @@ function PostsPage() {
   const sortedPosts = [...boardPosts].sort((a, b) => {
     switch (sortBy) {
       case 'views':
-        return (b.likeCount || 0) - (a.likeCount || 0);
+        return b.viewCount - a.viewCount;
       case 'latest':
       default:
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -289,23 +289,14 @@ function PostsPage() {
             <div className="flex items-center gap-3">
               {/* Sort Options - Sliding Toggle */}
               <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-1 border border-white/20">
-                {/* Sliding Background */}
-                <div 
-                  className={`absolute top-1 bottom-1 w-[calc(50%-2px)] bg-gradient-to-r rounded-xl transition-all duration-300 ease-in-out ${
-                    sortBy === 'latest' 
-                      ? 'left-1 from-blue-500/30 to-blue-600/30' 
-                      : 'left-[calc(50%+2px)] from-green-500/30 to-green-600/30'
-                  }`}
-                />
-                
                 {/* Toggle Buttons */}
                 <div className="relative flex">
                   <button
                     onClick={() => setSortBy('latest')}
-                    className={`flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                    className={`relative flex items-center justify-center gap-1 flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 z-10 whitespace-nowrap ${
                       sortBy === 'latest' 
-                        ? 'text-blue-100 z-10' 
-                        : 'text-gray-300 hover:text-white z-10'
+                        ? 'text-blue-100' 
+                        : 'text-gray-300 hover:text-white'
                     }`}
                   >
                     <Clock className="h-4 w-4" />
@@ -313,16 +304,26 @@ function PostsPage() {
                   </button>
                   <button
                     onClick={() => setSortBy('views')}
-                    className={`flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                    className={`relative flex items-center justify-center gap-1 flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 z-10 whitespace-nowrap ${
                       sortBy === 'views' 
-                        ? 'text-green-100 z-10' 
-                        : 'text-gray-300 hover:text-white z-10'
+                        ? 'text-green-100' 
+                        : 'text-gray-300 hover:text-white'
                     }`}
                   >
                     <BarChart3 className="h-4 w-4" />
                     조회순
                   </button>
                 </div>
+                
+                {/* Sliding Background */}
+                <div 
+                  className={`absolute top-1 bottom-1 left-1 bg-gradient-to-r rounded-xl transition-all duration-300 ease-in-out ${
+                    sortBy === 'latest' 
+                      ? 'transform translate-x-0 from-blue-500/30 to-blue-600/30' 
+                      : 'transform translate-x-[calc(100%-2px)] from-green-500/30 to-green-600/30'
+                  }`}
+                  style={{ width: 'calc(50% - 2px)' }}
+                />
               </div>
             </div>
           </div>
@@ -358,12 +359,10 @@ function PostsPage() {
                       </div>
                       
                       <div className="flex items-center gap-3">
-                        {post.likeCount !== undefined && post.likeCount > 0 && (
-                          <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/20 to-blue-600/10 rounded-2xl px-4 py-2 border border-blue-500/30">
-                            <Eye className="h-4 w-4 text-blue-400" />
-                            <span className="text-sm font-semibold text-blue-200">{formatViewCount(post.likeCount)}</span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/20 to-blue-600/10 rounded-2xl px-4 py-2 border border-blue-500/30">
+                          <Eye className="h-4 w-4 text-blue-400" />
+                          <span className="text-sm font-semibold text-blue-200">{formatViewCount(post.viewCount)}</span>
+                        </div>
                         <div className="flex items-center gap-2 bg-gradient-to-r from-green-500/20 to-green-600/10 rounded-2xl px-4 py-2 border border-green-500/30">
                           <MessageSquare className="h-4 w-4 text-green-400" />
                           <span className="text-sm font-semibold text-green-200">{formatCommentCount(post.commentCount)}</span>

@@ -31,7 +31,7 @@ public class PostController {
     @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createPost(@Valid @RequestBody PostCreateRequest postCreateRequest) {
         return ResponseEntity.ok(
-        CommonResponse.<Integer>builder()
+        CommonResponse.<PostInfoResponse>builder()
                 .successOrNot(CommonConstant.YES_FLAG)
                 .statusCode(CommonStatus.SUCCESS)
                 .data(postService.createPost(postCreateRequest))

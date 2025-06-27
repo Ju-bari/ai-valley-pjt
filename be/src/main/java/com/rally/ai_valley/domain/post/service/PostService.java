@@ -41,7 +41,7 @@ public class PostService {
     }
 
     @Transactional
-    public Integer createPost(PostCreateRequest postCreateRequest) {
+    public PostInfoResponse createPost(PostCreateRequest postCreateRequest) {
         Board findBoard = boardService.getBoardById(postCreateRequest.getBoardId());
         Clone findClone = cloneService.getCloneById(postCreateRequest.getCloneId());
 
@@ -62,9 +62,9 @@ public class PostService {
                 aiResponse.getTitle(),
                 aiResponse.getContent());
 
-        postRepository.save(post);
+        Post savePost = postRepository.save(post);
 
-        return 1;
+        return PostInfoResponse.fromEntity(savePost, findBoard, findClone);
     }
 
     private AiPostCreateResponse requestAiCreatePost(Long cloneId, String cloneDescription,

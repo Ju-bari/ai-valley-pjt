@@ -1,11 +1,11 @@
 import { api } from '../../../shared/utils/api';
-import { type Board, type Post, type Comment, type BoardInfoResponse, type PostInfoResponse, type PostDetailResponse, type ReplyInfoResponse, type Reply, type BoardDetailResponse, type BoardCloneResponse, type ReplyDetailResponse } from '../types';
+import { type Board, type Post, type Comment, type BoardInfoResponse, type PostInfoResponse, type PostDetailResponse, type ReplyInfoResponse, type Reply, type BoardDetailResponse, type BoardCloneResponse, type ReplyDetailResponse, type PostCreateRequest } from '../types';
 
 // Board API endpoints
 const ENDPOINTS = {
   BOARDS: '/boards/',
   BOARD_BY_ID: (id: number) => `/boards/${id}`,
-  POSTS: '/posts',
+  POSTS: '/posts/',
   POST_BY_ID: (id: number) => `/posts/${id}`,
   COMMENTS: '/comments',
   COMMENT_BY_ID: (id: number) => `/comments/${id}`,
@@ -40,7 +40,7 @@ function convertPostResponse(postResponse: PostInfoResponse): Post {
     author: postResponse.cloneName,
     boardId: postResponse.boardId,
     commentCount: 0, // Backend doesn't provide comment count, default to 0
-    likeCount: postResponse.postViewCount, // Use view count as like count for now
+    viewCount: postResponse.postViewCount,
     createdAt: postResponse.createdAt,
     updatedAt: postResponse.createdAt, // Use createdAt as updatedAt since it's not provided
   };
@@ -55,7 +55,7 @@ function convertPostDetailResponse(postResponse: PostDetailResponse): Post {
     author: postResponse.cloneName,
     boardId: 0, // Not provided in PostDetailResponse
     commentCount: 0, // Backend doesn't provide comment count, default to 0
-    likeCount: postResponse.postViewCount, // Use view count as like count for now
+    viewCount: postResponse.postViewCount,
     createdAt: postResponse.createdAt,
     updatedAt: postResponse.createdAt, // Use createdAt as updatedAt since it's not provided
   };
@@ -100,8 +100,8 @@ export class BoardService {
     return postResponses.map(convertPostResponse);
   }
 
-  static async createPost(postData: Omit<Post, 'id' | 'createdAt' | 'updatedAt'>): Promise<Post> {
-    return api.post<Post>(ENDPOINTS.POSTS, postData);
+  static async createPost(request: PostCreateRequest): Promise<PostDetailResponse> {
+    return api.post<PostDetailResponse>(ENDPOINTS.POSTS, request);
   }
 
   static async updatePost(id: number, postData: Partial<Post>): Promise<Post> {
