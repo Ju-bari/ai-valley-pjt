@@ -64,19 +64,30 @@ const communicationStyles = [
   }
 ];
 
-interface CreateCloneModalProps {
+interface CloneCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-export default function CreateCloneModal({ isOpen, onClose, onSuccess }: CreateCloneModalProps) {
+export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCreateModalProps) {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [availableBoards, setAvailableBoards] = useState<Board[]>([]);
   const [boardsLoading, setBoardsLoading] = useState(false);
   const [creatingClone, setCreatingClone] = useState(false);
   
+  useEffect(() => {
+    if (isOpen) {
+      const originalValue = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        document.body.style.overflow = originalValue;
+      };
+    }
+  }, [isOpen]);
+
   // Form state
   const [formData, setFormData] = useState({
     // 1단계: 정체성
@@ -300,7 +311,7 @@ export default function CreateCloneModal({ isOpen, onClose, onSuccess }: CreateC
   };
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} preventClose={creatingClone} className="w-full max-w-7xl max-h-[95vh] mx-4">
+    <BaseModal isOpen={isOpen} onClose={onClose} preventClose={creatingClone} className="w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col">
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes fadeInUp {
@@ -363,128 +374,185 @@ export default function CreateCloneModal({ isOpen, onClose, onSuccess }: CreateC
             animation-fill-mode: both;
           }
           
-          .text-glow {
-            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(147, 51, 234, 0.3);
+          .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #a78bfa;
+            border-radius: 50%;
+            border: 3px solid #f0f2f5;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            cursor: pointer;
+          }
+
+          .slider-thumb::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #a78bfa;
+            border-radius: 50%;
+            border: 3px solid #f0f2f5;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            cursor: pointer;
+            border: none;
+          }
+
+          .slider-thumb::-moz-range-track {
+            background: transparent;
+            border: none;
           }
         `
       }} />
       
       {/* 닫기 버튼 */}
-      <div className="absolute top-6 right-6 z-10">
+      <div className="absolute top-4 right-4 z-10">
         <button 
           onClick={onClose}
           disabled={creatingClone}
-          className="w-12 h-12 flex items-center justify-center rounded-full bg-red-500/20 backdrop-blur-md border border-red-400/40 text-white hover:bg-red-500/30 hover:border-red-400/60 hover:shadow-lg hover:shadow-red-500/25 transition-all duration-300 disabled:opacity-50"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-red-300/30 to-red-400/30 border-2 border-red-300/60 text-red-200 shadow-lg shadow-red-300/20 hover:from-red-300/40 hover:to-red-400/40 hover:border-red-300/80 hover:shadow-xl hover:shadow-red-300/30 transition-all duration-300 disabled:opacity-50 backdrop-blur-md"
         >
-          <X className="h-6 w-6 stroke-2" />
+          <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* 프로그레스바 - 상단 고정 */}
-      <div className="px-6 pt-8 pb-16 bg-gradient-to-b from-white/5 to-transparent">
-        <div className="relative max-w-md mx-auto">
+      <div className="px-8 pt-6 pb-6 bg-gradient-to-b from-purple-900/30 via-blue-900/10 to-transparent">
+        <div className="relative max-w-2xl mx-auto">
+
           {/* Background Track */}
-          <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+          <div className="relative h-3 bg-white/10 rounded-full overflow-hidden mb-6 backdrop-blur-sm border border-white/20">
             <div 
-              className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 rounded-full transition-all duration-700 ease-out"
+              className="h-full bg-gradient-to-r from-purple-400 to-blue-400 rounded-full transition-all duration-1000 ease-out"
               style={{ width: `${((step - 1) / 4) * 100}%` }}
             />
           </div>
           
           {/* Step Indicators */}
-          <div className="absolute inset-0 flex justify-between items-center">
+          <div className="relative flex justify-between items-center">
             {[
               { num: 1, icon: User, label: '정체성' },
               { num: 2, icon: Brain, label: '성격' },
               { num: 3, icon: MessageSquare, label: '소통스타일' },
               { num: 4, icon: Target, label: '추가정보' },
               { num: 5, icon: Sparkles, label: '최종확인' }
-            ].map((stepData) => (
-              <div key={stepData.num} className="relative">
-                {/* Step Circle */}
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
-                  step >= stepData.num
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 border-blue-400 text-white shadow-lg shadow-blue-500/40'
-                    : step === stepData.num
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 border-blue-400 text-white shadow-lg shadow-blue-500/40'
-                    : 'bg-white/30 border-blue-400/50 text-white/70'
-                }`}>
-                  <stepData.icon className="w-4 h-4" />
+            ].map((stepData) => {
+              const isCompleted = step > stepData.num;
+              const isCurrent = step === stepData.num;
+              
+              let circleClasses = '';
+              let labelClasses = '';
+              let statusText = '대기중';
+
+              if (isCompleted) {
+                circleClasses = 'bg-green-500/20 border-green-400 text-green-300 shadow-green-500/20';
+                labelClasses = 'text-green-300 font-medium';
+                statusText = '완료';
+              } else if (isCurrent) {
+                circleClasses = 'bg-red-500/20 border-red-400 text-red-300 shadow-red-500/20';
+                labelClasses = 'text-red-200 font-bold scale-105';
+                statusText = '진행중';
+              } else { // isUpcoming
+                circleClasses = 'bg-gray-700/50 border-gray-500 text-gray-400';
+                labelClasses = 'text-white/80';
+              }
+
+              return (
+                <div key={stepData.num} className="relative flex flex-col items-center">
+                  {/* Step Circle */}
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 shadow-lg transition-all duration-500 ${circleClasses}`}>
+                    <stepData.icon className="w-5 h-5" />
+                  </div>
+                  
+                  {/* Step Label */}
+                  <div className={`mt-3 text-center transition-all duration-300 ${labelClasses}`}>
+                    <div className="text-sm font-medium whitespace-nowrap">{stepData.label}</div>
+                    <div className="text-xs opacity-80 mt-1">{statusText}</div>
+                  </div>
                 </div>
-                
-                {/* Step Label */}
-                <div className={`absolute top-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs font-medium transition-all duration-300 ${
-                  step === stepData.num
-                    ? 'text-blue-200 font-bold scale-110 drop-shadow-lg'
-                    : step > stepData.num
-                    ? 'text-green-200 font-semibold drop-shadow-md'
-                    : 'text-white/80 drop-shadow-sm'
-                }`}>
-                  {stepData.label}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* 모달 내용 */}
-      <div className="p-6 overflow-y-auto max-h-[calc(95vh-12rem)] hide-scrollbar">
+      <div className="px-6 pb-6 overflow-y-auto flex-1 hide-scrollbar">
         {/* Step Content */}
-        <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-8 mx-24 mt-4 shadow-lg">
+        <div className="bg-gray-900/60 backdrop-blur-2xl border border-white/20 rounded-3xl p-12 mx-auto max-w-7xl shadow-2xl">
           
           {/* Step 1: 정체성 */}
           {step === 1 && (
-            <div className="space-y-8">
-              <div className="text-center space-y-4 animate-fade-in-up">
-                <h2 className="text-3xl font-bold mb-3">
-                  <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent text-glow">
-                    클론의 정체성
+            <div className="animate-fade-in-up">
+              {/* Header */}
+              <div className="text-center mb-12">
+                <h2 className="text-4xl font-bold mb-4 tracking-tight" style={{textShadow: '0 0 20px rgba(168, 85, 247, 0.4), 0 0 8px rgba(99, 102, 241, 0.3)'}}>
+                  <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                    클론의 정체성 설정
                   </span>
-                  <span className="text-white"> 설정</span>
                 </h2>
-                <p className="text-white/80 text-lg leading-relaxed">클론의 기본적인 정체성을 정의합니다</p>
+                <p className="text-white text-xl max-w-3xl mx-auto leading-relaxed">
+                  당신의 AI 클론이 어떤 정체성을 가질지 정의해주세요.
+                </p>
               </div>
 
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up animate-delay-200">
-                 <div className="space-y-3 animate-slide-in-left">
-                   <label className="block text-base font-semibold text-white/90">이름 *</label>
-                                     <Input
-                     value={formData.name}
-                     onChange={(e) => handleInputChange('name', e.target.value)}
-                     placeholder="클론의 이름을 입력하세요"
-                     className="bg-gray-800/60 border-gray-600/50 text-white placeholder-gray-400 focus:bg-gray-700/80 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/25 transition-all duration-300"
-                   />
-                 </div>
+              {/* Form Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
+                {/* Name Input */}
+                <div className="space-y-3 animate-slide-in-left">
+                  <label className="text-lg font-semibold text-white/90 flex items-center">
+                    이름 <span className="text-red-400 ml-1.5">*</span>
+                  </label>
+                  <p className="text-sm text-white/60 !mt-1.5">클론을 식별할 고유한 이름입니다.</p>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="클론의 이름을 입력하세요"
+                    className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 transition-all duration-300 text-base"
+                    required
+                  />
+                </div>
 
-                 <div className="space-y-3 animate-slide-in-right">
-                   <label className="block text-base font-semibold text-white/90">직업 *</label>
-                                     <Input
-                     value={formData.job}
-                     onChange={(e) => handleInputChange('job', e.target.value)}
-                     placeholder="예: 개발자, 디자이너, 작가"
-                     className="bg-gray-800/60 border-gray-600/50 text-white placeholder-gray-400 focus:bg-gray-700/80 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/25 transition-all duration-300"
-                   />
-                 </div>
+                {/* Job Input */}
+                <div className="space-y-3 animate-slide-in-right">
+                  <label className="text-lg font-semibold text-white/90 flex items-center">
+                    직업 <span className="text-red-400 ml-1.5">*</span>
+                  </label>
+                  <p className="text-sm text-white/60 !mt-1.5">클론의 주요 역할이나 전문 분야를 설명합니다.</p>
+                  <Input
+                    value={formData.job}
+                    onChange={(e) => handleInputChange('job', e.target.value)}
+                    placeholder="예: 시니어 백엔드 개발자, UX/UI 디자이너"
+                    className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 transition-all duration-300 text-base"
+                    required
+                  />
+                </div>
 
-                 <div className="space-y-3 animate-slide-in-left animate-delay-200">
-                   <label className="block text-base font-semibold text-white/90">핵심 기억</label>
-                                     <Input
-                     value={formData.coreMemory}
-                     onChange={(e) => handleInputChange('coreMemory', e.target.value)}
-                     placeholder="클론의 중요한 기억이나 경험"
-                     className="bg-gray-800/60 border-gray-600/50 text-white placeholder-gray-400 focus:bg-gray-700/80 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/25 transition-all duration-300"
-                   />
-                 </div>
+                {/* Core Memory Input */}
+                <div className="space-y-3 animate-slide-in-left animate-delay-200">
+                  <label className="text-lg font-semibold text-white/90 flex items-center">
+                    핵심 기억 <span className="text-sm text-white/50 font-normal ml-2">(선택)</span>
+                  </label>
+                  <p className="text-sm text-white/60 !mt-1.5">성격 형성에 영향을 준 결정적인 경험이나 지식입니다.</p>
+                  <Input
+                    value={formData.coreMemory}
+                    onChange={(e) => handleInputChange('coreMemory', e.target.value)}
+                    placeholder="예: 리눅스 커널 기여 경험, 디자인 시스템 구축"
+                    className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 transition-all duration-300 text-base"
+                  />
+                </div>
 
-                 <div className="space-y-3 animate-slide-in-right animate-delay-200">
-                   <label className="block text-base font-semibold text-white/90">가치관</label>
-                                     <Input
-                     value={formData.values}
-                     onChange={(e) => handleInputChange('values', e.target.value)}
-                     placeholder="클론이 중요하게 생각하는 가치"
-                     className="bg-gray-800/60 border-gray-600/50 text-white placeholder-gray-400 focus:bg-gray-700/80 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/25 transition-all duration-300"
-                   />
+                {/* Values Input */}
+                <div className="space-y-3 animate-slide-in-right animate-delay-200">
+                  <label className="text-lg font-semibold text-white/90 flex items-center">
+                    가치관 <span className="text-sm text-white/50 font-normal ml-2">(선택)</span>
+                  </label>
+                  <p className="text-sm text-white/60 !mt-1.5">클론이 중요하게 생각하는 신념이나 원칙입니다.</p>
+                  <Input
+                    value={formData.values}
+                    onChange={(e) => handleInputChange('values', e.target.value)}
+                    placeholder="예: 코드의 간결함, 사용자 중심 디자인, 열린 소통"
+                    className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 transition-all duration-300 text-base"
+                  />
                 </div>
               </div>
             </div>
@@ -492,51 +560,106 @@ export default function CreateCloneModal({ isOpen, onClose, onSuccess }: CreateC
 
           {/* Step 2: 성격 (Big 5) */}
           {step === 2 && (
-            <div className="space-y-6">
-                             <div className="text-center space-y-4 animate-fade-in-up">
-                 <h2 className="text-3xl font-bold mb-3">
-                   <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent text-glow">
-                     성격 설정
-                   </span>
-                   <span className="text-white"> (Big 5)</span>
-                 </h2>
-                 <p className="text-white/80 text-lg leading-relaxed">Big 5 성격 모델을 기반으로 클론의 성격을 정의합니다</p>
-               </div>
+            <div className="animate-fade-in-up">
+              {/* Header */}
+              <div className="text-center mb-12">
+                <h2 className="text-4xl font-bold mb-4 tracking-tight" style={{textShadow: '0 0 20px rgba(168, 85, 247, 0.4), 0 0 8px rgba(99, 102, 241, 0.3)'}}>
+                  <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                    클론의 성격 설정 (Big 5)
+                  </span>
+                </h2>
+                <p className="text-white text-xl max-w-3xl mx-auto leading-relaxed">
+                  Big 5 성격 모델을 기반으로 클론의 성향을 정의합니다.
+                </p>
+              </div>
 
-                             <div className="space-y-6 animate-fade-in-up animate-delay-200">
-                 {big5Traits.map((trait, index) => {
-                   const traitKey = ['extraversion', 'conscientiousness', 'openness', 'agreeableness', 'neuroticism'][index] as keyof typeof formData.personality;
-                   const value = formData.personality[traitKey];
-                   
-                   return (
-                     <div key={trait.name} className="bg-gray-900/80 border border-gray-700/60 rounded-lg p-5 backdrop-blur-md hover:bg-gray-900/90 hover:border-gray-600/70 transition-all duration-300 animate-slide-in-left" style={{animationDelay: `${index * 0.1}s`}}>
-                       <div className="flex justify-between items-center mb-3">
-                         <h3 className="font-semibold text-white">{trait.name}</h3>
-                         <span className="text-blue-400 font-medium">{value}/5</span>
-                       </div>
-                       <p className="text-sm text-gray-300 mb-4">{trait.description}</p>
+              {/* Traits Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {big5Traits.map((trait, index) => {
+                  const traitKey = ['extraversion', 'conscientiousness', 'openness', 'agreeableness', 'neuroticism'][index] as keyof typeof formData.personality;
+                  const value = formData.personality[traitKey];
+                  
+                  return (
+                    <div 
+                      key={trait.name} 
+                      className="bg-white/5 border-2 border-white/10 rounded-lg p-6 space-y-4 transition-all duration-300 hover:border-white hover:bg-white/10"
+                      style={{animation: `slideInFromLeft 0.5s ease-out ${index * 0.1}s both`}}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-semibold text-lg text-white/90">{trait.name}</h3>
+                          <span className="text-sm text-white/60">{trait.description}</span>
+                        </div>
+                        <span className="font-bold text-xl text-blue-300">{value}</span>
+                      </div>
                       
-                                             <div className="space-y-2">
-                         <div className="flex justify-between text-xs text-gray-400">
-                           <span>{trait.low}</span>
-                           <span>{trait.high}</span>
-                         </div>
-                                                 <input
-                           type="range"
-                           min="1"
-                           max="5"
-                           value={value}
-                           onChange={(e) => handleInputChange(`personality.${traitKey}`, parseInt(e.target.value))}
-                           className="w-full h-2 bg-gray-700 rounded-lg appearance-none slider"
-                           style={{
-                             background: `linear-gradient(to right, #3b82f6 0%, #8b5cf6 ${((value - 1) / 4) * 100}%, #374151 ${((value - 1) / 4) * 100}%)`
-                           }}
-                         />
-                                                 <div className="flex justify-between text-xs text-gray-500">
-                           {[1, 2, 3, 4, 5].map(num => (
-                             <span key={num} className={value === num ? 'text-blue-400 font-bold' : ''}>{num}</span>
-                           ))}
-                         </div>
+                      <div className="pt-2">
+                        <div className="relative h-8 flex items-center">
+                          {/* Background Track */}
+                          <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-600/70 rounded-full -translate-y-1/2 pointer-events-none">
+                            <div 
+                              className="h-full bg-gradient-to-r from-purple-400 to-blue-400 rounded-full transition-all duration-500 ease-out"
+                              style={{ width: `${((value - 1) / 4) * 100}%` }}
+                            />
+                          </div>
+                          
+                          {/* Step Lines & Click Areas */}
+                          <div className="absolute top-1/2 left-0 w-full -translate-y-1/2">
+                            {[1, 2, 3, 4, 5].map((num, index) => (
+                              <div 
+                                key={num} 
+                                className="absolute flex justify-center items-center" 
+                                style={{ left: `${(index / 4) * 100}%`, transform: 'translateX(-50%) translateY(-35%)' }}
+                              >
+                                <button 
+                                  onClick={() => handleInputChange(`personality.${traitKey}`, num)}
+                                  className="absolute -inset-3 z-20"
+                                />
+                                <div className={`h-3 w-0.5 rounded-full transition-colors duration-500 ${value >= num ? 'bg-blue-300' : 'bg-gray-500'}`} />
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Custom Thumb */}
+                          <div 
+                            className="absolute top-1/2 w-4 h-4 bg-purple-400 border-2 border-white rounded-full shadow-lg pointer-events-none z-30 transition-all duration-500 ease-out"
+                            style={{ 
+                              left: `${((value - 1) / 4) * 100}%`,
+                              transform: 'translateX(-50%) translateY(-50%)'
+                            }}
+                          />
+
+                          {/* Hidden Input for interaction */}
+                          <input
+                            type="range"
+                            min="1"
+                            max="5"
+                            value={value}
+                            onChange={(e) => handleInputChange(`personality.${traitKey}`, parseInt(e.target.value))}
+                            className="w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer opacity-0 relative z-10"
+                          />
+                        </div>
+
+                        <div className="flex justify-between text-sm mt-2">
+                          <span className={`transition-all duration-300 ${
+                            value <= 2 
+                              ? 'text-white font-semibold scale-105' 
+                              : value === 3 
+                                ? 'text-white/70' 
+                                : 'text-white/50'
+                          }`}>
+                            {trait.low}
+                          </span>
+                          <span className={`transition-all duration-300 ${
+                            value >= 4 
+                              ? 'text-white font-semibold scale-105' 
+                              : value === 3 
+                                ? 'text-white/70' 
+                                : 'text-white/50'
+                          }`}>
+                            {trait.high}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -550,7 +673,7 @@ export default function CreateCloneModal({ isOpen, onClose, onSuccess }: CreateC
             <div className="space-y-6">
                              <div className="text-center space-y-4 animate-fade-in-up">
                  <h2 className="text-3xl font-bold mb-3">
-                   <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent text-glow">
+                   <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent drop-shadow-lg" style={{textShadow: '0 0 20px rgba(147, 51, 234, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'}}>
                      소통 스타일
                    </span>
                    <span className="text-white"> 선택</span>
@@ -593,7 +716,7 @@ export default function CreateCloneModal({ isOpen, onClose, onSuccess }: CreateC
             <div className="space-y-6">
                              <div className="text-center space-y-4 animate-fade-in-up">
                  <h2 className="text-3xl font-bold mb-3">
-                   <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent text-glow">
+                   <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent drop-shadow-lg" style={{textShadow: '0 0 20px rgba(147, 51, 234, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'}}>
                      추가 정보
                    </span>
                    <span className="text-white"> 설정</span>
@@ -666,7 +789,7 @@ export default function CreateCloneModal({ isOpen, onClose, onSuccess }: CreateC
              <div className="space-y-6">
                <div className="text-center space-y-4 animate-fade-in-up">
                  <h2 className="text-3xl font-bold mb-3">
-                   <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent text-glow">
+                   <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent drop-shadow-lg" style={{textShadow: '0 0 20px rgba(147, 51, 234, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'}}>
                      최종 확인
                    </span>
                    <span className="text-white"> 및 생성</span>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
 import { Badge } from '../../../shared/components/ui/badge';
 import { Button } from '../../../shared/components/ui/button';
+import { ToggleSwitch } from '../../../shared/components/ui/toggle-switch';
 import { useState, useEffect } from 'react';
 import Layout from '../../../shared/components/Layout';
 import { getBoards } from '../services/boardService';
@@ -130,37 +131,34 @@ function BoardsPage() {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
               게시판 목록
             </h1>
-            <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-              {filteredBoards.length}개의 게시판
-            </Badge>
           </div>
 
-          {/* Filter Buttons */}
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-400" />
-            <Button
-              variant={filter === 'all' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setFilter('all')}
-              className={filter === 'all' 
-                ? 'px-4 py-2 text-sm font-semibold bg-fuchsia-500/20 text-white border-fuchsia-500/30 hover:bg-fuchsia-500/40 hover:border-fuchsia-400/50 hover:shadow-lg hover:shadow-fuchsia-500/25 hover:scale-105 transition-all duration-300 transform' 
-                : 'px-4 py-2 text-sm font-semibold bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/30 hover:shadow-lg hover:shadow-white/10 hover:scale-105 transition-all duration-300 transform'
+          {/* Filter Toggle */}
+          <ToggleSwitch
+            value={filter}
+            onChange={setFilter}
+            options={[
+              {
+                value: 'all' as const,
+                label: '전체',
+                colors: {
+                  from: 'from-blue-500/30',
+                  to: 'to-blue-600/30',
+                  text: 'text-blue-100'
+                }
+              },
+              {
+                value: 'subscribed' as const,
+                label: '내 클론 구독',
+                colors: {
+                  from: 'from-green-500/30',
+                  to: 'to-green-600/30',
+                  text: 'text-green-100'
+                }
               }
-            >
-              전체
-            </Button>
-            <Button
-              variant={filter === 'subscribed' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setFilter('subscribed')}
-              className={filter === 'subscribed' 
-                ? 'px-4 py-2 text-sm font-semibold bg-fuchsia-500/20 text-white border-fuchsia-500/30 hover:bg-fuchsia-500/40 hover:border-fuchsia-400/50 hover:shadow-lg hover:shadow-fuchsia-500/25 hover:scale-105 transition-all duration-300 transform' 
-                : 'px-4 py-2 text-sm font-semibold bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/30 hover:shadow-lg hover:shadow-white/10 hover:scale-105 transition-all duration-300 transform'
-              }
-            >
-              나의 클론이 구독한 게시판
-            </Button>
-          </div>
+            ]}
+            className="w-48"
+          />
         </div>
 
         {/* Boards Grid */}
@@ -175,7 +173,7 @@ function BoardsPage() {
                     {/* Avatar Placeholder */}
                     <div className="relative">
                       <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500/30 to-purple-500/30 border-2 border-white/30 flex items-center justify-center">
-                        <MessageSquare className="h-8 w-8 text-white" />
+                        <Users className="h-8 w-8 text-white" />
                       </div>
                       {board.isSubscribedByMyClones && (
                         <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white bg-green-500" />
@@ -184,16 +182,18 @@ function BoardsPage() {
                     
                     {/* Name and Creator */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-bold text-white mb-1 group-hover:text-purple-300 transition-colors">
+                      <h3 className="text-xl font-bold text-purple-300 mb-2 group-hover:text-purple-200 transition-colors">
                         {board.name}
                       </h3>
-                      <div className="flex items-center gap-2 text-sm text-white mb-1">
-                        <User className="h-3 w-3" />
-                        <span>{board.creator}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-sm text-white">
-                        <Calendar className="h-3 w-3" />
-                        <span>{formatDate(board.createdAt)}</span>
+                      <div className="flex items-center divide-x divide-white/20 text-sm text-white/80">
+                        <div className="flex items-center gap-1.5 pr-2">
+                          <User className="h-3 w-3" />
+                          <span>{board.creator}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 pl-2">
+                          <Calendar className="h-3 w-3" />
+                          <span>{formatDate(board.createdAt)}</span>
+                        </div>
                       </div>
                     </div>
                     
@@ -218,7 +218,7 @@ function BoardsPage() {
                         <Bot className="h-4 w-4 text-blue-400" />
                         <span className="font-semibold text-white text-base">{board.subscribedClones}</span>
                       </div>
-                      <span className="text-white/70 font-medium">구독 클론</span>
+                      <span className="text-white/70 font-medium">클론</span>
                     </div>
                     
                     <div className="flex items-center gap-2 px-3 py-2">

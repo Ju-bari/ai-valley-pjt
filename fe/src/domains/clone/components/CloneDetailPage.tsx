@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, ArrowLeft, Edit, Save, X, MessageSquare, FileText, Users, Calendar, User, Loader2, Power, Eye, UserMinus, UserPlus, Check, Bell, BellOff, Hash, PlusCircle } from 'lucide-react';
+import { Bot, ArrowLeft, Edit, Save, X, MessageSquare, FileText, Users, Calendar, User, Loader2, Power, Eye, UserMinus, UserPlus, Check, Bell, BellOff, Hash, PlusCircle, Sparkles } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
 import { Badge } from '../../../shared/components/ui/badge';
@@ -9,6 +9,7 @@ import Layout from '../../../shared/components/Layout';
 import { getCloneById, updateCloneInfo, getCloneBoards, getClonePosts, getCloneStatistics, subscribeCloneToBoard, unsubscribeCloneFromBoard } from '../services/cloneService';
 import { type CloneInfoResponse, type BoardInfoResponse, type PostInfoResponse, type CloneStatisticsResponse } from '../types';
 import PostCreateModal from '../../board/components/PostCreateModal';
+import { formatMarkdown } from '../../../shared/utils';
 
 function CloneDetailPage() {
   const { cloneId } = useParams<{ cloneId: string }>();
@@ -36,8 +37,6 @@ function CloneDetailPage() {
     boardName: ''
   });
   const [postSortBy, setPostSortBy] = useState<'latest' | 'oldest'>('latest');
-
-
 
   useEffect(() => {
     const fetchCloneData = async () => {
@@ -449,9 +448,6 @@ function CloneDetailPage() {
                   <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-fuchsia-500/20 to-purple-500/20 border-4 border-white/30 mx-auto flex items-center justify-center">
                     <Bot className="h-12 w-12 text-fuchsia-300" />
                   </div>
-                  <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full border-2 border-white ${
-                    clone.isActive === 1 ? 'bg-green-500' : 'bg-gray-500'
-                  }`} />
                 </div>
                 
                 <div className="mt-4">
@@ -486,9 +482,13 @@ function CloneDetailPage() {
                         className="w-full bg-white/10 border border-white/20 rounded-lg p-3 text-white placeholder-white/60 resize-none focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
                         rows={4}
                         disabled={updating}
+                        placeholder="클론 설명을 입력하세요... (마크다운 지원: # 제목, ## 부제목, 줄바꿈)"
                       />
                     ) : (
-                      <p className="text-white/90 text-sm leading-relaxed">{clone.description}</p>
+                      <div 
+                        className="text-white/90 text-sm leading-relaxed"
+                                                  dangerouslySetInnerHTML={{ __html: formatMarkdown(clone.description) }}
+                      />
                     )}
                   </div>
                   
@@ -648,7 +648,7 @@ function CloneDetailPage() {
                                   handleBoardSubscriptionToggle(board.boardId, isSubscribed);
                                 }}
                                 disabled={isLoading}
-                                className={`relative group flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 ${
+                                className={`relative group/btn flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 ${
                                   isSubscribed
                                     ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 focus:ring-green-400 shadow-lg shadow-green-500/25'
                                     : 'bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 focus:ring-gray-400 shadow-lg shadow-gray-500/25'
@@ -657,7 +657,7 @@ function CloneDetailPage() {
                                 {isLoading ? (
                                   <Loader2 className="h-4 w-4 animate-spin text-white" />
                                 ) : isSubscribed ? (
-                                  <Bell className="h-4 w-4 text-white group-hover:animate-bounce" />
+                                  <Bell className="h-4 w-4 text-white group-hover/btn:animate-bounce" />
                                 ) : (
                                   <BellOff className="h-4 w-4 text-white" />
                                 )}
@@ -672,20 +672,23 @@ function CloneDetailPage() {
                             </div>
                           </div>
                           
-                          {/* 게시글 생성 버튼 (구독중인 경우에만) */}
-                          {isSubscribed && (
-                            <div className="border-t border-white/10 pt-3 mt-3">
-                              <Button
-                                onClick={(e) => handleCreatePost(board.boardId, e)}
-                                className="w-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 hover:text-blue-100 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105 transition-all duration-300 transform drop-shadow-lg"
-                                style={{textShadow: '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(147, 51, 234, 0.4)'}}
-                                size="sm"
-                              >
-                                <PlusCircle className="h-4 w-4 mr-2" />
-                                게시글 작성
-                              </Button>
-                            </div>
-                          )}
+                          {/* 게시글 생성 버튼 */}
+                          <div className="border-t border-white/10 pt-3 mt-3">
+                            <Button
+                              onClick={(e) => isSubscribed ? handleCreatePost(board.boardId, e) : undefined}
+                              disabled={!isSubscribed}
+                              className={`w-full transition-all duration-300 transform ${
+                                isSubscribed 
+                                  ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 hover:text-blue-100 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105 drop-shadow-lg'
+                                  : 'bg-gradient-to-r from-gray-500/20 to-gray-600/20 text-gray-400 border border-gray-500/30 cursor-not-allowed opacity-60'
+                              }`}
+                              style={isSubscribed ? {textShadow: '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(147, 51, 234, 0.4)'} : {}}
+                              size="sm"
+                            >
+                              <Sparkles className="h-4 w-4 mr-1" />
+                              게시글 작성
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}

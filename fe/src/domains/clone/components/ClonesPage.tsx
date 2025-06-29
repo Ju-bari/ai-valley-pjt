@@ -1,4 +1,4 @@
-import { Bot, MessageSquare, Users, FileText, ArrowLeft, Loader2 } from 'lucide-react';
+import { Bot, MessageSquare, Users, FileText, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
 import { Badge } from '../../../shared/components/ui/badge';
@@ -7,7 +7,8 @@ import Layout from '../../../shared/components/Layout';
 import { useState, useEffect } from 'react';
 import { getMyClones, getCloneStatistics, getCloneBoards, getClonePosts } from '../services/cloneService';
 import { type CloneInfoResponse, type CloneStatisticsResponse, type BoardInfoResponse, type PostInfoResponse } from '../types';
-import CreateCloneModal from './CreateCloneModal';
+import CloneCreateModal from './CloneCreateModal';
+import { formatMarkdown } from '../../../shared/utils';
 
 interface CloneWithStats extends CloneInfoResponse {
   statistics?: CloneStatisticsResponse;
@@ -173,7 +174,7 @@ function ClonesPage() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              나의 AI 클론 목록
+              나의 클론 목록
             </h1>
           </div>
           
@@ -200,7 +201,7 @@ function ClonesPage() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              나의 AI 클론 목록
+              나의 클론 목록
             </h1>
           </div>
           
@@ -235,11 +236,8 @@ function ClonesPage() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              나의 AI 클론 목록
+              나의 클론 목록
             </h1>
-            <Badge variant="secondary" className="bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30">
-              {clones.length}개의 클론
-            </Badge>
           </div>
           
           <Button 
@@ -247,6 +245,7 @@ function ClonesPage() {
             className="px-6 py-3 text-base font-semibold bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 hover:text-blue-100 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105 transition-all duration-300 transform drop-shadow-lg"
             style={{textShadow: '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(147, 51, 234, 0.4)'}}
           >
+            <Sparkles className="h-4 w-4 mr-1" />
             새 클론 생성
           </Button>
         </div>
@@ -262,6 +261,7 @@ function ClonesPage() {
               className="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 hover:text-blue-100 hover:border-blue-400/50 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300 transform drop-shadow-lg"
               style={{textShadow: '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(147, 51, 234, 0.4)'}}
             >
+              <Sparkles className="h-5 w-5 mr-1" />
               클론 생성하기
             </Button>
           </div>
@@ -273,76 +273,83 @@ function ClonesPage() {
                 key={clone.cloneId} 
                 to={`/clones/${clone.cloneId}`}
               >
-                <Card className="bg-white/10 backdrop-blur-md border-2 border-white/20 hover:border-white/30 transition-all duration-300 hover:bg-white/15 group cursor-pointer h-[280px] flex flex-col">
-                  <CardHeader className="pb-1">
-                    <div className="flex items-start gap-4">
-                      {/* Avatar Placeholder */}
-                      <div className="relative">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500/30 to-purple-500/30 border-2 border-white/30 flex items-center justify-center">
-                          <Bot className="h-8 w-8 text-white" />
+                <Card className="bg-white/10 backdrop-blur-md border-2 border-white/20 hover:border-white/30 transition-all duration-300 hover:bg-white/15 group cursor-pointer h-[420px] flex flex-col">
+                  <CardHeader className="flex-shrink-0">
+                    <div className="flex items-start gap-3">
+                      {/* Avatar */}
+                      <div className="relative flex-shrink-0">
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-500/30 to-purple-500/30 border-2 border-white/30 flex items-center justify-center">
+                          <Bot className="h-7 w-7 text-white" />
                         </div>
-                        <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
                           clone.isActive === 1 ? 'bg-green-500' : 'bg-gray-500'
                         }`} />
                       </div>
                       
                       {/* Name and Status */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-xl font-bold text-white mb-1 group-hover:text-fuchsia-300 transition-colors">
+                        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-fuchsia-300 transition-colors line-clamp-1">
                           {clone.name}
                         </h3>
                         <Badge 
                           variant="default"
                           className={clone.isActive === 1 
-                            ? "bg-green-500/20 text-green-300 border-green-500/30"
-                            : "bg-gray-500/20 text-gray-300 border-gray-500/30"
+                            ? "bg-green-500/20 text-green-300 border-green-500/30 text-xs"
+                            : "bg-gray-500/20 text-gray-300 border-gray-500/30 text-xs"
                           }
                         >
                           {clone.isActive === 1 ? 'Active' : 'Standby'}
                         </Badge>
                       </div>
                     </div>
-                    
-                    {/* Description - moved to header for closer spacing */}
-                    <p className="text-white/90 text-base mt-3 leading-relaxed h-12 overflow-hidden">
-                      {clone.description}
-                    </p>
                   </CardHeader>
                   
-                  <CardContent className="pt-0 flex-1 flex flex-col justify-end">
+                  <CardContent className="flex-1 flex flex-col pt-0 overflow-hidden">
+                    {/* Description Section - Flexible */}
+                    <div 
+                      className="text-white/90 text-base leading-relaxed overflow-y-auto overflow-x-hidden [&>*]:mb-1 [&>*]:mt-0 [&>div]:mb-1 [&::-webkit-scrollbar]:hidden flex-1"
+                      style={{ 
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none'
+                      }}
+                      dangerouslySetInnerHTML={{ __html: formatMarkdown(clone.description) }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                     
-                    {/* Stats with labels */}
-                    <div className="flex items-center justify-between text-sm mt-4 pt-4 border-t border-white/10">
-                      <div 
-                        className="flex items-center gap-2 hover:bg-white/5 rounded-lg px-3 py-2 transition-all duration-200 cursor-pointer group"
-                        onClick={(e) => handleBoardClick(clone, e)}
-                        title="참여 게시판 보기"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <Users className="h-4 w-4 text-blue-400 group-hover:text-blue-300" />
-                          <span className="font-semibold text-white group-hover:text-blue-300 text-base">{clone.boardCount ?? 0}</span>
+                    {/* Stats Section - Fixed at bottom */}
+                    <div className="flex-shrink-0 mt-auto pt-4 border-t border-white/10">
+                      <div className="flex items-center justify-between text-sm">
+                        <div 
+                          className="flex items-center gap-2 hover:bg-white/5 rounded-lg px-3 py-2 transition-all duration-200 cursor-pointer group"
+                          onClick={(e) => handleBoardClick(clone, e)}
+                          title="참여 게시판 보기"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <Users className="h-4 w-4 text-blue-400 group-hover:text-blue-300" />
+                            <span className="font-semibold text-white group-hover:text-blue-300 text-base">{clone.boardCount ?? 0}</span>
+                          </div>
+                          <span className="text-white/70 group-hover:text-blue-200 font-medium">게시판</span>
                         </div>
-                        <span className="text-white/70 group-hover:text-blue-200 font-medium">게시판</span>
-                      </div>
-                      
-                      <div 
-                        className="flex items-center gap-2 hover:bg-white/5 rounded-lg px-3 py-2 transition-all duration-200 cursor-pointer group"
-                        onClick={(e) => handlePostClick(clone, e)}
-                        title="작성 게시글 보기"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <FileText className="h-4 w-4 text-purple-400 group-hover:text-purple-300" />
-                          <span className="font-semibold text-white group-hover:text-purple-300 text-base">{clone.statistics?.postCount ?? 0}</span>
+                        
+                        <div 
+                          className="flex items-center gap-2 hover:bg-white/5 rounded-lg px-3 py-2 transition-all duration-200 cursor-pointer group"
+                          onClick={(e) => handlePostClick(clone, e)}
+                          title="작성 게시글 보기"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <FileText className="h-4 w-4 text-purple-400 group-hover:text-purple-300" />
+                            <span className="font-semibold text-white group-hover:text-purple-300 text-base">{clone.statistics?.postCount ?? 0}</span>
+                          </div>
+                          <span className="text-white/70 group-hover:text-purple-200 font-medium">게시글</span>
                         </div>
-                        <span className="text-white/70 group-hover:text-purple-200 font-medium">게시글</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 px-3 py-2">
-                        <div className="flex items-center gap-1.5">
-                          <MessageSquare className="h-4 w-4 text-green-400" />
-                          <span className="font-semibold text-white text-base">{clone.statistics?.replyCount ?? 0}</span>
+                        
+                        <div className="flex items-center gap-2 px-3 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <MessageSquare className="h-4 w-4 text-green-400" />
+                            <span className="font-semibold text-white text-base">{clone.statistics?.replyCount ?? 0}</span>
+                          </div>
+                          <span className="text-white/70 font-medium">댓글</span>
                         </div>
-                        <span className="text-white/70 font-medium">댓글</span>
                       </div>
                     </div>
                   </CardContent>
@@ -353,7 +360,7 @@ function ClonesPage() {
         )}
 
         {/* Create Clone Modal */}
-        <CreateCloneModal
+        <CloneCreateModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onSuccess={handleCreateCloneSuccess}
