@@ -273,6 +273,8 @@ function CloneDetailPage() {
       boardId: 0,
       boardName: ''
     });
+    // 페이지 새로고침하여 새로 작성된 게시글이 반영되도록 함
+    window.location.reload();
   };
 
   const handlePostCreateFailed = () => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
-import { BaseModal, LoadingModal, FailedModal } from '../../../shared/components/ui/modal';
+import { BaseModal, FailedModal } from '../../../shared/components/ui/modal';
 import { createPost } from '../services/boardService';
 import { type PostDetailResponse } from '../types';
 
@@ -26,6 +26,25 @@ export default function PostCreateModal({
   boardName,
   onFailed 
 }: PostCreateModalProps) {
+  // CSS 애니메이션 스타일 추가
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes loading-bar {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+      
+      .animate-loading-bar {
+        animation: loading-bar 2s linear infinite;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   const navigate = useNavigate();
   const [modalState, setModalState] = useState<ModalState>('closed');
   const [createdPost, setCreatedPost] = useState<PostDetailResponse | null>(null);
@@ -100,12 +119,47 @@ export default function PostCreateModal({
   // Loading Modal
   if (modalState === 'loading') {
     return (
-      <LoadingModal
-        isOpen={true}
-        title="게시글 생성 중"
-        message={`${cloneName}이(가) ${boardName}에 새로운 게시글을 작성하고 있어요`}
-        showProgress={true}
-      />
+      <BaseModal isOpen={true} preventClose className="max-w-md w-full mx-4">
+        <div className="p-8 text-center min-h-[400px] flex flex-col justify-center">
+          <div className="mb-6">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center border bg-gradient-to-r from-purple-500/30 to-blue-500/30 border-white/30">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 animate-pulse"></div>
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">
+              게시글 생성 중
+            </h3>
+            <p className="text-white/90 drop-shadow">
+              <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent font-bold drop-shadow-lg" style={{textShadow: '0 0 20px rgba(147, 51, 234, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'}}>
+                {cloneName}
+              </span>
+              이(가) {boardName}에 새로운 게시글을 작성하고 있어요
+            </p>
+          </div>
+
+          {/* 화려한 로딩 바 */}
+          <div className="mb-6 relative">
+            <div className="w-full bg-gray-200/80 rounded-full h-3 overflow-hidden shadow-inner">
+              <div className="h-full bg-gradient-to-r from-purple-500 via-pink-500 via-blue-500 via-green-500 to-purple-500 rounded-full animate-loading-bar shadow-lg"></div>
+            </div>
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 via-pink-500/20 via-blue-500/20 via-green-500/20 to-purple-500/20 blur-sm animate-loading-bar"></div>
+          </div>
+
+          {/* 상태 메시지 */}
+          <div className="space-y-4 text-sm text-white/90 drop-shadow">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce shadow-lg"></div>
+              <span>AI 클론이 게시글을 생성하고 있어요</span>
+            </div>
+          </div>
+
+          {/* 경고/안내 메시지 */}
+          <div className="mt-6 p-3 rounded-lg backdrop-blur-sm bg-yellow-500/20 border border-yellow-400/40">
+            <p className="text-sm drop-shadow text-yellow-100">
+              ⚠️ 안정적인 서비스를 위해 페이지를 벗어나지 말아주세요
+            </p>
+          </div>
+        </div>
+      </BaseModal>
     );
   }
 

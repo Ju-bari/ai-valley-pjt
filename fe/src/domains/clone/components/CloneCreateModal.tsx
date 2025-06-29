@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '../../../shared/components/ui/badge';
 import { Button } from '../../../shared/components/ui/button';
 import { Input } from '../../../shared/components/ui/input';
-import { BaseModal } from '../../../shared/components/ui/modal';
+import { BaseModal, FailedModal } from '../../../shared/components/ui/modal';
 import { createClone } from '../services/cloneService';
 import { getBoards } from '../../board/services/boardService';
 import { type Board, type BoardInfoResponse } from '../../board/types';
@@ -70,13 +70,39 @@ interface CloneCreateModalProps {
   onSuccess?: () => void;
 }
 
+type ModalState = 'form' | 'loading' | 'success' | 'failed';
+
 export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCreateModalProps) {
+  // CSS 애니메이션 스타일 추가
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes loading-bar {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+      
+      @keyframes gradientMove {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      
+      .animate-loading-bar {
+        animation: loading-bar 2s linear infinite;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   const navigate = useNavigate();
+  const [modalState, setModalState] = useState<ModalState>('form');
   const [step, setStep] = useState(1);
   const [availableBoards, setAvailableBoards] = useState<BoardInfoResponse[]>([]);
   const [boardsLoading, setBoardsLoading] = useState(false);
-  const [creatingClone, setCreatingClone] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'createdAt' | 'cloneCount' | 'postCount' | 'replyCount'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -91,6 +117,32 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
       };
     }
   }, [isOpen]);
+
+  // Prevent page navigation during clone creation
+  useEffect(() => {
+    if (modalState === 'loading') {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = '안정적인 서비스를 위해 페이지에 머물러 주세요';
+      };
+
+      const handlePopState = (e: PopStateEvent) => {
+        e.preventDefault();
+        window.history.pushState(null, '', window.location.href);
+      };
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      window.addEventListener('popstate', handlePopState);
+      
+      // Push current state to prevent back navigation
+      window.history.pushState(null, '', window.location.href);
+
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [modalState]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -123,6 +175,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
   useEffect(() => {
     if (isOpen) {
       // 모달이 열릴 때 즉시 리셋
+      setModalState('form');
       setStep(1);
       setFormData({
         name: '',
@@ -148,9 +201,9 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
       setSearchQuery('');
       setSortBy('createdAt');
       setSortOrder('desc');
-      setCreatingClone(false);
     } else {
       // 모달이 닫힐 때도 리셋 (다음 열기를 위해)
+      setModalState('form');
       setStep(1);
     }
   }, [isOpen]);
@@ -315,9 +368,9 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
 
   const handleSubmit = async () => {
     try {
-      setCreatingClone(true);
+      setModalState('loading');
 
-      // 3초간 로딩 표시
+      // 5초간 로딩 표시
       setTimeout(async () => {
         try {
           const comprehensiveDescription = createComprehensiveDescription();
@@ -328,49 +381,33 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
           };
 
           await createClone(cloneData);
-
-          // 로딩 종료 후 성공 모달 표시
-          setCreatingClone(false);
-          setShowSuccessModal(true);
-          
-          // 성공 모달을 3초간 표시 후 자동으로 모달 닫기 및 페이지 이동
-          setTimeout(() => {
-            setShowSuccessModal(false);
-            setStep(1);
-            onClose();
-            
-            if (onSuccess) {
-              onSuccess();
-            } else {
-              navigate('/clones');
-            }
-          }, 3000);
+          setModalState('success');
           
         } catch (error) {
           console.error('Clone creation failed:', error);
           
-          setCreatingClone(false);
-          setShowSuccessModal(false);
-          
-          let errorMessage = '클론 생성에 실패했습니다.';
-          
-          if (error instanceof Error) {
-            if (error.message.includes('HTTP error')) {
-              errorMessage += ' 서버 연결에 문제가 있습니다.';
-            } else if (error.message.includes('Failed to fetch')) {
-              errorMessage += ' 네트워크 연결을 확인해주세요.';
-            } else {
-              errorMessage += ` (${error.message})`;
-            }
-          }
-          
-          alert(errorMessage + ' 다시 시도해주세요.');
+          // 3초간 로딩을 계속 보여준 후 실패 상태로 변경
+          setTimeout(() => {
+            setModalState('failed');
+          }, 3000);
         }
-      }, 3000);
+      }, 5000);
       
     } catch (error) {
       console.error('Unexpected error:', error);
-      setCreatingClone(false);
+      setModalState('failed');
+    }
+  };
+
+  const handleGoBack = () => {
+    setModalState('form');
+    setStep(1);
+    onClose();
+    
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      navigate('/clones');
     }
   };
 
@@ -392,7 +429,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
   };
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} preventClose={creatingClone} className="w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col">
+    <BaseModal isOpen={isOpen} onClose={onClose} preventClose={modalState === 'loading'} className="w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col">
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes fadeInUp {
@@ -410,10 +447,12 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
             0% {
               opacity: 0;
               transform: translateX(-20px);
+              visibility: hidden;
             }
             100% {
               opacity: 1;
               transform: translateX(0);
+              visibility: visible;
             }
           }
           
@@ -421,10 +460,12 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
             0% {
               opacity: 0;
               transform: translateX(20px);
+              visibility: hidden;
             }
             100% {
               opacity: 1;
               transform: translateX(0);
+              visibility: visible;
             }
           }
           
@@ -438,6 +479,31 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
           
           .animate-slide-in-right {
             animation: slideInFromRight 0.5s ease-out;
+          }
+          
+          /* 애니메이션 중 텍스트 색상 고정 */
+          .card-content * {
+            color: inherit !important;
+          }
+          
+          .card-content h3 {
+            color: rgb(255 255 255) !important;
+          }
+          
+          .card-content .text-white\/70 {
+            color: rgb(255 255 255 / 0.7) !important;
+          }
+          
+          .card-content .text-white\/90 {
+            color: rgb(255 255 255 / 0.9) !important;
+          }
+          
+          .card-content .text-white\/60 {
+            color: rgb(255 255 255 / 0.6) !important;
+          }
+          
+          .card-content .text-white\/40 {
+            color: rgb(255 255 255 / 0.4) !important;
           }
           
           .animate-delay-200 {
@@ -482,6 +548,122 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
             background: transparent;
             border: none;
           }
+
+          @keyframes firework {
+            0% {
+              transform: translateY(100px) scale(0.3);
+              opacity: 0.2;
+            }
+            20% {
+              transform: translateY(50px) scale(0.7);
+              opacity: 0.6;
+            }
+            40% {
+              transform: translateY(-20px) scale(1);
+              opacity: 1;
+            }
+            60% {
+              transform: translateY(-80px) scale(1.1);
+              opacity: 0.9;
+            }
+            80% {
+              transform: translateY(-150px) scale(0.8);
+              opacity: 0.5;
+            }
+            100% {
+              transform: translateY(-250px) scale(0.2);
+              opacity: 0;
+            }
+          }
+
+          @keyframes firework-success {
+            0% {
+              transform: translateY(80px) scale(0.2) rotate(0deg);
+              opacity: 0.1;
+            }
+            25% {
+              transform: translateY(20px) scale(0.6) rotate(45deg);
+              opacity: 0.7;
+            }
+            50% {
+              transform: translateY(-60px) scale(1) rotate(120deg);
+              opacity: 1;
+            }
+            75% {
+              transform: translateY(-140px) scale(0.9) rotate(200deg);
+              opacity: 0.7;
+            }
+            100% {
+              transform: translateY(-280px) scale(0.1) rotate(360deg);
+              opacity: 0;
+            }
+          }
+
+          .animate-firework {
+            animation: firework linear infinite;
+          }
+
+          .animate-firework-success {
+            animation: firework-success linear infinite;
+          }
+
+          @keyframes explode {
+            0% {
+              transform: scale(0.2) translateY(50px);
+              opacity: 0.8;
+            }
+            20% {
+              transform: scale(0.8) translateY(-20px);
+              opacity: 1;
+            }
+            40% {
+              transform: scale(1.1) translateY(-100px);
+              opacity: 0.9;
+            }
+            60% {
+              transform: scale(1) translateY(-180px);
+              opacity: 0.7;
+            }
+            80% {
+              transform: scale(0.6) translateY(-260px);
+              opacity: 0.4;
+            }
+            100% {
+              transform: scale(0.1) translateY(-350px);
+              opacity: 0;
+            }
+          }
+
+          @keyframes sparkle {
+            0%, 100% {
+              transform: scale(0.3) rotate(0deg);
+              opacity: 0.4;
+              filter: brightness(1) blur(0px);
+            }
+            25% {
+              transform: scale(1) rotate(90deg);
+              opacity: 1;
+              filter: brightness(2) blur(1px);
+            }
+            50% {
+              transform: scale(1.5) rotate(180deg);
+              opacity: 0.8;
+              filter: brightness(3) blur(0px);
+            }
+            75% {
+              transform: scale(0.8) rotate(270deg);
+              opacity: 0.9;
+              filter: brightness(2.5) blur(1px);
+            }
+          }
+
+          .animate-explode {
+            animation: explode linear infinite;
+          }
+
+          .animate-sparkle {
+            animation: sparkle linear infinite;
+          }
         `
       }} />
       
@@ -489,7 +671,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
       <div className="absolute top-4 right-4 z-10">
         <button 
           onClick={onClose}
-          disabled={creatingClone}
+          disabled={modalState === 'loading'}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-red-500/20 border-2 border-red-400 text-red-300 shadow-lg shadow-red-500/20 hover:bg-red-500/30 hover:border-red-300 hover:shadow-xl hover:shadow-red-500/30 transition-all duration-300 disabled:opacity-50 backdrop-blur-md"
         >
           <X className="h-4 w-4" />
@@ -1015,7 +1197,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
                 <div className="flex-1 space-y-6">
                   {/* Basic Info Section */}
                   <div 
-                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg"
+                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg card-content"
                     style={{animation: `slideInFromLeft 0.5s ease-out 0s both`}}
                   >
                     <h3 className="text-lg font-bold text-white mb-3">
@@ -1047,7 +1229,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
 
                   {/* Personality & Communication Style Section */}
                   <div 
-                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg flex flex-col"
+                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg flex flex-col card-content"
                     style={{animation: `slideInFromLeft 0.5s ease-out 0.1s both`}}
                   >
                     <h3 className="text-lg font-bold text-white mb-3">
@@ -1080,7 +1262,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
 
                   {/* Selected Boards Section */}
                   <div 
-                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg"
+                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg card-content"
                     style={{animation: `slideInFromLeft 0.5s ease-out 0.2s both`}}
                   >
                     <h3 className="text-lg font-bold text-white mb-3">
@@ -1103,7 +1285,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
                   {/* Additional Info Section */}
                   {formData.additionalInfo && (
                     <div 
-                      className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg"
+                      className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg card-content"
                       style={{animation: `slideInFromLeft 0.5s ease-out 0.4s both`}}
                     >
                       <h3 className="text-lg font-bold text-white mb-3">
@@ -1120,7 +1302,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
                 <div className="flex-1 flex flex-col">
                   {/* Actual Prompt Section */}
                   <div 
-                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg flex-1 flex flex-col"
+                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg flex-1 flex flex-col card-content"
                     style={{animation: `slideInFromRight 0.5s ease-out 0.1s both`}}
                   >
                     <h3 className="text-lg font-bold text-white mb-3 flex-shrink-0">
@@ -1150,11 +1332,11 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
               <div className="flex justify-center">
                 <Button
                   onClick={handleSubmit}
-                  disabled={creatingClone}
+                  disabled={modalState === 'loading'}
                   className="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 hover:text-blue-100 hover:border-blue-400/50 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300 transform drop-shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style={{textShadow: '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(147, 51, 234, 0.4)'}}
                 >
-                  {creatingClone ? (
+                  {modalState === 'loading' ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                       클론 생성 중...
@@ -1162,7 +1344,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
                   ) : (
                     <>
                       <Sparkles className="h-5 w-5 mr-1" />
-                      AI 클론 생성하기
+                      클론 생성하기
                     </>
                   )}
                 </Button>
@@ -1176,7 +1358,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
       {step > 1 && (
         <button
           onClick={() => setStep(step - 1)}
-          disabled={creatingClone}
+          disabled={modalState === 'loading'}
           className="absolute left-8 top-1/2 -translate-y-1/2 w-16 h-16 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg z-20"
         >
           <ChevronLeft className="h-10 w-10" />
@@ -1186,7 +1368,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
       {step < 6 && (
         <button
           onClick={() => setStep(step + 1)}
-          disabled={!canProceedToNext() || creatingClone}
+          disabled={!canProceedToNext() || modalState === 'loading'}
           className="absolute right-8 top-1/2 -translate-y-1/2 w-16 h-16 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg z-20"
         >
           <ChevronRight className="h-10 w-10" />
@@ -1194,43 +1376,270 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
       )}
 
       {/* 로딩 오버레이 */}
-      {creatingClone && !showSuccessModal && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-none">
-          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/20 rounded-2xl p-12 text-center shadow-2xl">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-blue-500/30 to-purple-500/30 border-2 border-white/30 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-4 border-white/20 border-t-white"></div>
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-3">AI 클론 생성 중...</h3>
-            <p className="text-white/70 text-lg">잠시만 기다려주세요.</p>
-            <div className="mt-6 flex justify-center">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+      {modalState === 'loading' && (
+        <div className="absolute inset-0 bg-gradient-to-br from-black/85 via-gray-900/90 to-black/85 backdrop-blur-xl flex items-center justify-center z-50 rounded-none overflow-hidden">
+          {/* 폭죽 효과 */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* 기본 폭죽 */}
+            {[...Array(50)].map((_, i) => (
+              <div
+                key={`firework-${i}`}
+                className="absolute w-2 h-2 rounded-full animate-firework"
+                style={{
+                  backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd', '#98d8c8', '#f7dc6f'][i % 8],
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 0.5}s`,
+                  animationDuration: `${2 + Math.random() * 4}s`
+                }}
+              />
+            ))}
+            {/* 폭발 효과 */}
+            {[...Array(30)].map((_, i) => (
+              <div
+                key={`explode-${i}`}
+                className="absolute w-3 h-3 rounded-full animate-explode"
+                style={{
+                  backgroundColor: ['#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43', '#10ac84', '#ee5a52', '#0abde3'][i % 8],
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 0.3}s`,
+                  animationDuration: `${1.5 + Math.random() * 3}s`,
+                  boxShadow: `0 0 15px ${['#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43', '#10ac84', '#ee5a52', '#0abde3'][i % 8]}`
+                }}
+              />
+            ))}
+            {/* 반짝이 효과 */}
+            {[...Array(40)].map((_, i) => (
+              <div
+                key={`sparkle-${i}`}
+                className="absolute w-1 h-1 rounded-full animate-sparkle"
+                style={{
+                  backgroundColor: ['#fff', '#ffef5b', '#ff6b6b', '#4ecdc4', '#45b7d1'][i % 5],
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 0.2}s`,
+                  animationDuration: `${1 + Math.random() * 2.5}s`,
+                  boxShadow: '0 0 10px #fff'
+                }}
+              />
+            ))}
+          </div>
+          <div 
+            className="backdrop-blur-xl rounded-3xl border shadow-2xl border-white/40 shadow-purple-500/20 p-10 text-center min-h-[450px] flex flex-col justify-center max-w-lg w-full mx-4"
+            style={{
+              background: 'linear-gradient(45deg, rgba(255,255,255,0.9), rgba(147,197,253,0.85), rgba(196,181,253,0.85), rgba(255,255,255,0.9))',
+              backgroundSize: '400% 400%',
+              animation: 'gradientMove 4s ease infinite'
+            }}
+          >
+            <div className="mb-8">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center border bg-gradient-to-r from-purple-500/30 to-blue-500/30 border-white/30">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 animate-pulse"></div>
               </div>
+              <h3 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">
+                <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent" style={{textShadow: '0 0 20px rgba(147, 51, 234, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'}}>
+                  AI 클론 생성 중
+                </span>
+              </h3>
+                             <p className="text-white/90 text-lg drop-shadow">
+                 <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent font-bold drop-shadow-lg" style={{textShadow: '0 0 20px rgba(147, 51, 234, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'}}>
+                   {formData.name}
+                 </span>
+                 이(가) 새로운 세상으로 태어나고 있어요
+               </p>
+            </div>
+
+            {/* 화려한 로딩 바 */}
+            <div className="mb-8 relative">
+              <div className="w-full bg-gray-200/80 rounded-full h-3 overflow-hidden shadow-inner">
+                <div className="h-full bg-gradient-to-r from-purple-500 via-pink-500 via-blue-500 via-green-500 to-purple-500 rounded-full animate-loading-bar shadow-lg"></div>
+              </div>
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 via-pink-500/20 via-blue-500/20 via-green-500/20 to-purple-500/20 blur-sm animate-loading-bar"></div>
+            </div>
+
+            {/* 상태 메시지 */}
+            <div className="space-y-4 text-sm text-white/90 drop-shadow mb-6">
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce shadow-lg"></div>
+                <span>AI가 클론의 정체성을 학습하고 있어요</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce shadow-lg" style={{animationDelay: '0.2s'}}></div>
+                <span>성격과 소통 스타일을 분석하고 있어요</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce shadow-lg" style={{animationDelay: '0.4s'}}></div>
+                <span>게시판 구독 설정을 적용하고 있어요</span>
+              </div>
+            </div>
+
+            {/* 경고/안내 메시지 */}
+            <div className="p-4 rounded-lg backdrop-blur-sm bg-yellow-500/20 border border-yellow-400/40">
+              <p className="text-sm drop-shadow text-yellow-100">
+                ⚠️ 안정적인 서비스를 위해 페이지를 벗어나지 말아주세요
+              </p>
             </div>
           </div>
         </div>
       )}
 
       {/* 성공 모달 */}
-      {showSuccessModal && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-none">
-          <div 
-            className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/20 rounded-2xl p-12 text-center shadow-2xl animate-fade-in-up"
-          >
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-green-500/30 to-emerald-500/30 border-2 border-green-400/50 flex items-center justify-center">
-              <CheckCircle className="h-10 w-10 text-green-400 animate-pulse" />
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-3">클론 생성 완료!</h3>
-            <p className="text-white/70 text-lg mb-2">AI 클론이 성공적으로 생성되었습니다.</p>
-            <p className="text-white/50 text-sm">곧 클론 목록 페이지로 이동합니다...</p>
-            <div className="mt-6 flex justify-center">
-              <div className="w-16 h-1 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" style={{width: '100%'}}></div>
-              </div>
-            </div>
+      {modalState === 'success' && (
+        <div className="absolute inset-0 bg-gradient-to-br from-black/85 via-gray-900/90 to-black/85 backdrop-blur-xl flex items-center justify-center z-50 rounded-none overflow-hidden">
+          {/* 폭죽 효과 - 더 화려하게 */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* 성공 폭죽 */}
+            {[...Array(80)].map((_, i) => (
+              <div
+                key={`success-firework-${i}`}
+                className="absolute w-3 h-3 rounded-full animate-firework-success"
+                style={{
+                  backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd', '#98d8c8', '#f7dc6f', '#ff9ff3', '#54a0ff'][i % 10],
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 0.3}s`,
+                  animationDuration: `${1.5 + Math.random() * 3}s`,
+                  boxShadow: `0 0 10px ${['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd', '#98d8c8', '#f7dc6f', '#ff9ff3', '#54a0ff'][i % 10]}`
+                }}
+              />
+            ))}
+            {/* 대형 폭발 효과 */}
+            {[...Array(20)].map((_, i) => (
+              <div
+                key={`success-explode-${i}`}
+                className="absolute w-5 h-5 rounded-full animate-explode"
+                style={{
+                  backgroundColor: ['#00ff00', '#ffff00', '#ff00ff', '#00ffff', '#ff8000', '#8000ff'][i % 6],
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 0.2}s`,
+                  animationDuration: `${1 + Math.random() * 3}s`,
+                  boxShadow: `0 0 25px ${['#00ff00', '#ffff00', '#ff00ff', '#00ffff', '#ff8000', '#8000ff'][i % 6]}`
+                }}
+              />
+            ))}
+            {/* 황금 반짝이 */}
+            {[...Array(60)].map((_, i) => (
+              <div
+                key={`success-sparkle-${i}`}
+                className="absolute w-2 h-2 rounded-full animate-sparkle"
+                style={{
+                  backgroundColor: ['#ffd700', '#ffef5b', '#fff', '#ff6b6b', '#4ecdc4'][i % 5],
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 0.1}s`,
+                  animationDuration: `${1.2 + Math.random() * 2.5}s`,
+                  boxShadow: '0 0 20px #ffd700'
+                }}
+              />
+            ))}
           </div>
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              @keyframes fadeInUp {
+                0% {
+                  opacity: 0;
+                  transform: translateY(10px);
+                }
+                100% {
+                  opacity: 1;
+                  transform: translateY(0);
+                }
+              }
+              
+              .animate-fade-in-up {
+                animation: fadeInUp 0.6s ease-out;
+              }
+              
+              .animate-delay-300 {
+                animation-delay: 0.3s;
+                animation-fill-mode: both;
+              }
+              
+              .animate-delay-500 {
+                animation-delay: 0.5s;
+                animation-fill-mode: both;
+              }
+              
+              .animate-delay-700 {
+                animation-delay: 0.7s;
+                animation-fill-mode: both;
+              }
+            `
+          }} />
+          <div 
+            className="backdrop-blur-xl rounded-3xl border shadow-2xl border-white/40 shadow-purple-500/20 p-12 text-center max-w-2xl w-full mx-4"
+            style={{
+              background: 'linear-gradient(45deg, rgba(255,255,255,0.9), rgba(147,197,253,0.85), rgba(196,181,253,0.85), rgba(255,255,255,0.9))',
+              backgroundSize: '400% 400%',
+              animation: 'gradientMove 4s ease infinite'
+            }}
+          >
+            {/* Success Icon */}
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center border bg-gradient-to-r from-green-500/30 to-emerald-500/30 border-green-500/50 animate-fade-in-up">
+              <CheckCircle className="h-10 w-10 text-green-400" />
+            </div>
+
+            {/* Title */}
+            <h3 className="text-3xl font-bold text-white mb-8 animate-fade-in-up animate-delay-300">
+              <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent drop-shadow-lg" style={{textShadow: '0 0 20px rgba(147, 51, 234, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'}}>
+                {formData.name}
+              </span>
+              이(가) 태어났어요!
+            </h3>
+
+                         {/* Success Message */}
+             <p className="text-white/90 text-lg mb-2 animate-fade-in-up animate-delay-700">
+               AI 클론이 성공적으로 생성되었습니다!
+             </p>
+             <p className="text-white/60 text-lg mb-8 animate-fade-in-up animate-delay-700">
+               이제 클론 목록에서 새로운 클론을 확인하실 수 있습니다.
+             </p>
+
+             {/* Action Button */}
+             <div className="flex justify-center animate-fade-in-up animate-delay-700">
+               <button
+                 onClick={handleGoBack}
+                 className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-blue-500/30 rounded-lg hover:from-blue-500/40 hover:to-purple-500/40 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105 transition-all duration-300 transform"
+                 style={{textShadow: '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(147, 51, 234, 0.4)'}}
+               >
+                 돌아가기
+               </button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 실패 모달 */}
+      {modalState === 'failed' && (
+        <div className="absolute inset-0 overflow-hidden bg-gradient-to-br from-black/85 via-gray-900/90 to-black/85 backdrop-blur-xl">
+          {/* 실패 폭죽 효과 - 차분한 색상 */}
+          <div className="absolute inset-0 pointer-events-none">
+            {[...Array(30)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-2 h-2 rounded-full animate-firework"
+                style={{
+                  backgroundColor: ['#ff7675', '#74b9ff', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055'][i % 6],
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 0.4}s`,
+                  animationDuration: `${2 + Math.random() * 4}s`,
+                  opacity: 0.6
+                }}
+              />
+            ))}
+          </div>
+          <FailedModal
+            isOpen={true}
+            title="클론 생성 실패"
+            message="클론 생성에 실패했습니다"
+            onClose={() => {
+              setModalState('form');
+              onClose();
+            }}
+          />
         </div>
       )}
     </BaseModal>
