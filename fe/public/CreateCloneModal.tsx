@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, ArrowLeft, Save, Brain, MessageSquare, Users, Plus, Loader2, Sparkles, ChevronLeft, ChevronRight, X, User, Briefcase, Heart, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '../../../shared/components/ui/badge';
-import { Button } from '../../../shared/components/ui/button';
-import { Input } from '../../../shared/components/ui/input';
-import { BaseModal } from '../../../shared/components/ui/modal';
-import { createClone } from '../services/cloneService';
-import { getBoards } from '../../board/services/boardService';
-import { type Board } from '../../board/types';
-import { type CloneCreateRequest } from '../types';
+import { Badge } from '../src/shared/components/ui/badge';
+import { Button } from '../src/shared/components/ui/button';
+import { Input } from '../src/shared/components/ui/input';
+import { BaseModal } from '../src/shared/components/ui/modal';
+import { createClone } from '../src/domains/clone/services/cloneService';
+import { getBoards } from '../src/domains/board/services/boardService';
+import { type Board } from '../src/domains/board/types';
+import { type CloneCreateRequest } from '../src/domains/clone/types';
 
 // Big 5 성격 모델
 const big5Traits = [
@@ -603,7 +603,7 @@ export default function CreateCloneModal({ isOpen, onClose, onSuccess }: CreateC
 
                              {/* 게시판 선택 */}
                <div className="bg-gray-900/80 border border-gray-700/60 rounded-lg p-6 space-y-4 backdrop-blur-md hover:bg-gray-900/90 hover:border-gray-600/70 transition-all duration-300 animate-fade-in-up animate-delay-200">
-                 <h3 className="text-xl font-semibold text-white mb-2">활동할 게시판 선택</h3>
+                 <h3 className="text-xl font-semibold text-white mb-2">게시판 선택</h3>
                                  {boardsLoading ? (
                    <div className="flex items-center justify-center py-8">
                      <Loader2 className="h-8 w-8 animate-spin text-blue-400 mr-3" />

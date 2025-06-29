@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, ArrowLeft, Save, Brain, MessageSquare, Users, Plus, Loader2, Sparkles, ChevronLeft, ChevronRight, X, User, Briefcase, Heart, Target } from 'lucide-react';
+import { Bot, ArrowLeft, Save, Brain, MessageSquare, Users, Plus, Loader2, Sparkles, ChevronLeft, ChevronRight, X, User, Briefcase, Heart, Target, FileText, Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '../../../shared/components/ui/badge';
 import { Button } from '../../../shared/components/ui/button';
@@ -7,7 +7,7 @@ import { Input } from '../../../shared/components/ui/input';
 import { BaseModal } from '../../../shared/components/ui/modal';
 import { createClone } from '../services/cloneService';
 import { getBoards } from '../../board/services/boardService';
-import { type Board } from '../../board/types';
+import { type Board, type BoardInfoResponse } from '../../board/types';
 import { type CloneCreateRequest } from '../types';
 
 // Big 5 성격 모델
@@ -73,9 +73,13 @@ interface CloneCreateModalProps {
 export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCreateModalProps) {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [availableBoards, setAvailableBoards] = useState<Board[]>([]);
+  const [availableBoards, setAvailableBoards] = useState<BoardInfoResponse[]>([]);
   const [boardsLoading, setBoardsLoading] = useState(false);
   const [creatingClone, setCreatingClone] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'createdAt' | 'cloneCount' | 'postCount' | 'replyCount'>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   useEffect(() => {
     if (isOpen) {
@@ -105,19 +109,20 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
     },
     // 3단계: 소통 스타일
     communicationStyle: {
-      formality: '',
-      humor: '',
-      directness: '',
-      detail: ''
+      formality: '격식적',
+      humor: '유머러스',
+      directness: '직설적',
+      detail: '자세함'
     },
     // 4단계: 추가 정보
     selectedBoards: [] as number[],
     additionalInfo: ''
   });
 
-  // Reset form when modal opens
+  // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
+      // 모달이 열릴 때 즉시 리셋
       setStep(1);
       setFormData({
         name: '',
@@ -132,15 +137,21 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
           neuroticism: 3
         },
         communicationStyle: {
-          formality: '',
-          humor: '',
-          directness: '',
-          detail: ''
+          formality: '격식적',
+          humor: '유머러스',
+          directness: '직설적',
+          detail: '자세함'
         },
         selectedBoards: [],
         additionalInfo: ''
       });
+      setSearchQuery('');
+      setSortBy('createdAt');
+      setSortOrder('desc');
       setCreatingClone(false);
+    } else {
+      // 모달이 닫힐 때도 리셋 (다음 열기를 위해)
+      setStep(1);
     }
   }, [isOpen]);
 
@@ -151,7 +162,18 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
         try {
           setBoardsLoading(true);
           const boards = await getBoards();
-          setAvailableBoards(boards);
+          // Board 타입을 BoardInfoResponse 타입으로 변환
+          const convertedBoards: BoardInfoResponse[] = boards.map(board => ({
+            boardId: board.id,
+            name: board.name,
+            description: board.description,
+            createdByNickname: board.creator,
+            cloneCount: board.subscribedClones,
+            postCount: board.totalPosts,
+            replyCount: board.totalComments,
+            createdAt: board.createdAt
+          }));
+          setAvailableBoards(convertedBoards);
         } catch (error) {
           console.error('Failed to fetch boards:', error);
           setAvailableBoards([]);
@@ -189,6 +211,43 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
         ? prev.selectedBoards.filter(id => id !== boardId)
         : [...prev.selectedBoards, boardId]
     }));
+  };
+
+  // 게시판 필터링 및 정렬 함수
+  const getFilteredAndSortedBoards = () => {
+    let filtered = availableBoards;
+
+    // 검색 필터링
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(board => 
+        board.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        board.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // 정렬
+    return filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'createdAt':
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+        case 'cloneCount':
+          comparison = a.cloneCount - b.cloneCount;
+          break;
+        case 'postCount':
+          comparison = a.postCount - b.postCount;
+          break;
+        case 'replyCount':
+          comparison = a.replyCount - b.replyCount;
+          break;
+        default:
+          return 0;
+      }
+      
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
   };
 
   // Create comprehensive description from form data
@@ -258,39 +317,59 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
     try {
       setCreatingClone(true);
 
-      const comprehensiveDescription = createComprehensiveDescription();
-      const cloneData: CloneCreateRequest = {
-        name: formData.name,
-        description: comprehensiveDescription,
-        boardIds: formData.selectedBoards
-      };
+      // 3초간 로딩 표시
+      setTimeout(async () => {
+        try {
+          const comprehensiveDescription = createComprehensiveDescription();
+          const cloneData: CloneCreateRequest = {
+            name: formData.name,
+            description: comprehensiveDescription,
+            boardIds: formData.selectedBoards
+          };
 
-      await createClone(cloneData);
+          await createClone(cloneData);
 
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        navigate('/clones');
-      }
-      
-      onClose();
-    } catch (error) {
-      console.error('Clone creation failed:', error);
-      
-      let errorMessage = '클론 생성에 실패했습니다.';
-      
-      if (error instanceof Error) {
-        if (error.message.includes('HTTP error')) {
-          errorMessage += ' 서버 연결에 문제가 있습니다.';
-        } else if (error.message.includes('Failed to fetch')) {
-          errorMessage += ' 네트워크 연결을 확인해주세요.';
-        } else {
-          errorMessage += ` (${error.message})`;
+          // 로딩 종료 후 성공 모달 표시
+          setCreatingClone(false);
+          setShowSuccessModal(true);
+          
+          // 성공 모달을 3초간 표시 후 자동으로 모달 닫기 및 페이지 이동
+          setTimeout(() => {
+            setShowSuccessModal(false);
+            setStep(1);
+            onClose();
+            
+            if (onSuccess) {
+              onSuccess();
+            } else {
+              navigate('/clones');
+            }
+          }, 3000);
+          
+        } catch (error) {
+          console.error('Clone creation failed:', error);
+          
+          setCreatingClone(false);
+          setShowSuccessModal(false);
+          
+          let errorMessage = '클론 생성에 실패했습니다.';
+          
+          if (error instanceof Error) {
+            if (error.message.includes('HTTP error')) {
+              errorMessage += ' 서버 연결에 문제가 있습니다.';
+            } else if (error.message.includes('Failed to fetch')) {
+              errorMessage += ' 네트워크 연결을 확인해주세요.';
+            } else {
+              errorMessage += ` (${error.message})`;
+            }
+          }
+          
+          alert(errorMessage + ' 다시 시도해주세요.');
         }
-      }
+      }, 3000);
       
-      alert(errorMessage + ' 다시 시도해주세요.');
-    } finally {
+    } catch (error) {
+      console.error('Unexpected error:', error);
       setCreatingClone(false);
     }
   };
@@ -302,9 +381,11 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
       case 2:
         return true; // 기본값이 있으므로 항상 진행 가능
       case 3:
-        return Object.values(formData.communicationStyle).every(style => style !== '');
+        return true; // 기본값이 설정되어 있으므로 항상 진행 가능
       case 4:
         return true; // 추가 정보는 선택사항
+      case 5:
+        return true; // 게시판 선택은 선택사항
       default:
         return true;
     }
@@ -409,7 +490,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
         <button 
           onClick={onClose}
           disabled={creatingClone}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-red-300/30 to-red-400/30 border-2 border-red-300/60 text-red-200 shadow-lg shadow-red-300/20 hover:from-red-300/40 hover:to-red-400/40 hover:border-red-300/80 hover:shadow-xl hover:shadow-red-300/30 transition-all duration-300 disabled:opacity-50 backdrop-blur-md"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-red-500/20 border-2 border-red-400 text-red-300 shadow-lg shadow-red-500/20 hover:bg-red-500/30 hover:border-red-300 hover:shadow-xl hover:shadow-red-500/30 transition-all duration-300 disabled:opacity-50 backdrop-blur-md"
         >
           <X className="h-4 w-4" />
         </button>
@@ -423,7 +504,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
           <div className="relative h-3 bg-white/10 rounded-full overflow-hidden mb-6 backdrop-blur-sm border border-white/20">
             <div 
               className="h-full bg-gradient-to-r from-purple-400 to-blue-400 rounded-full transition-all duration-1000 ease-out"
-              style={{ width: `${((step - 1) / 4) * 100}%` }}
+              style={{ width: `${((step - 1) / 5) * 100}%` }}
             />
           </div>
           
@@ -434,7 +515,8 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
               { num: 2, icon: Brain, label: '성격' },
               { num: 3, icon: MessageSquare, label: '소통스타일' },
               { num: 4, icon: Target, label: '추가정보' },
-              { num: 5, icon: Sparkles, label: '최종확인' }
+              { num: 5, icon: FileText, label: '게시판선택' },
+              { num: 6, icon: Sparkles, label: '최종확인' }
             ].map((stepData) => {
               const isCompleted = step > stepData.num;
               const isCurrent = step === stepData.num;
@@ -487,72 +569,96 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
               <div className="text-center mb-12">
                 <h2 className="text-4xl font-bold mb-4 tracking-tight" style={{textShadow: '0 0 20px rgba(168, 85, 247, 0.4), 0 0 8px rgba(99, 102, 241, 0.3)'}}>
                   <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                    클론의 정체성 설정
+                    정체성 설정
                   </span>
                 </h2>
                 <p className="text-white text-xl max-w-3xl mx-auto leading-relaxed">
-                  당신의 AI 클론이 어떤 정체성을 가질지 정의해주세요.
+                  당신의 AI 클론이 어떤 정체성을 가질지 선택해주세요.
                 </p>
               </div>
 
-              {/* Form Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
-                {/* Name Input */}
-                <div className="space-y-3 animate-slide-in-left">
-                  <label className="text-lg font-semibold text-white/90 flex items-center">
-                    이름 <span className="text-red-400 ml-1.5">*</span>
-                  </label>
-                  <p className="text-sm text-white/60 !mt-1.5">클론을 식별할 고유한 이름입니다.</p>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="클론의 이름을 입력하세요"
-                    className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 transition-all duration-300 text-base"
-                    required
-                  />
+              {/* Identity Sections Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Name Section */}
+                <div 
+                  className="bg-white/5 border-2 border-white/10 rounded-lg p-6 space-y-4 transition-all duration-300 hover:border-white hover:bg-white/10 h-fit"
+                  style={{animation: `slideInFromLeft 0.5s ease-out 0s both`}}
+                >
+                  <div className="space-y-3">
+                    <label className="text-lg font-semibold text-white/90 flex items-center">
+                      이름 <span className="text-red-400 ml-1.5">*</span>
+                    </label>
+                    <p className="text-sm text-white/60">클론을 식별할 고유한 이름입니다.</p>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      placeholder="클론의 이름을 입력하세요"
+                      className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 focus:outline-none focus:ring-0 focus:ring-offset-0 transition-all duration-300 text-base"
+                      style={{outline: 'none', boxShadow: 'none'}}
+                      required
+                    />
+                  </div>
                 </div>
 
-                {/* Job Input */}
-                <div className="space-y-3 animate-slide-in-right">
-                  <label className="text-lg font-semibold text-white/90 flex items-center">
-                    직업 <span className="text-red-400 ml-1.5">*</span>
-                  </label>
-                  <p className="text-sm text-white/60 !mt-1.5">클론의 주요 역할이나 전문 분야를 설명합니다.</p>
-                  <Input
-                    value={formData.job}
-                    onChange={(e) => handleInputChange('job', e.target.value)}
-                    placeholder="예: 시니어 백엔드 개발자, UX/UI 디자이너"
-                    className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 transition-all duration-300 text-base"
-                    required
-                  />
+                {/* Job Section */}
+                <div 
+                  className="bg-white/5 border-2 border-white/10 rounded-lg p-6 space-y-4 transition-all duration-300 hover:border-white hover:bg-white/10 h-fit"
+                  style={{animation: `slideInFromLeft 0.5s ease-out 0.1s both`}}
+                >
+                  <div className="space-y-3">
+                    <label className="text-lg font-semibold text-white/90 flex items-center">
+                      직업 <span className="text-red-400 ml-1.5">*</span>
+                    </label>
+                    <p className="text-sm text-white/60">클론의 주요 역할이나 전문 분야를 설명합니다.</p>
+                    <Input
+                      value={formData.job}
+                      onChange={(e) => handleInputChange('job', e.target.value)}
+                      placeholder="예: 시니어 백엔드 개발자, UX/UI 디자이너"
+                      className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 focus:outline-none focus:ring-0 focus:ring-offset-0 transition-all duration-300 text-base"
+                      style={{outline: 'none', boxShadow: 'none'}}
+                      required
+                    />
+                  </div>
                 </div>
 
-                {/* Core Memory Input */}
-                <div className="space-y-3 animate-slide-in-left animate-delay-200">
-                  <label className="text-lg font-semibold text-white/90 flex items-center">
-                    핵심 기억 <span className="text-sm text-white/50 font-normal ml-2">(선택)</span>
-                  </label>
-                  <p className="text-sm text-white/60 !mt-1.5">성격 형성에 영향을 준 결정적인 경험이나 지식입니다.</p>
-                  <Input
-                    value={formData.coreMemory}
-                    onChange={(e) => handleInputChange('coreMemory', e.target.value)}
-                    placeholder="예: 리눅스 커널 기여 경험, 디자인 시스템 구축"
-                    className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 transition-all duration-300 text-base"
-                  />
+                {/* Core Memory Section */}
+                <div 
+                  className="bg-white/5 border-2 border-white/10 rounded-lg p-6 space-y-4 transition-all duration-300 hover:border-white hover:bg-white/10 h-fit"
+                  style={{animation: `slideInFromLeft 0.5s ease-out 0.2s both`}}
+                >
+                  <div className="space-y-3">
+                    <label className="text-lg font-semibold text-white/90 flex items-center">
+                      핵심 기억 <span className="text-sm text-white/50 font-normal ml-2">(선택)</span>
+                    </label>
+                    <p className="text-sm text-white/60">성격 형성에 영향을 준 결정적인 경험이나 지식입니다.</p>
+                    <Input
+                      value={formData.coreMemory}
+                      onChange={(e) => handleInputChange('coreMemory', e.target.value)}
+                      placeholder="예: 리눅스 커널 기여 경험, 디자인 시스템 구축"
+                      className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 focus:outline-none focus:ring-0 focus:ring-offset-0 transition-all duration-300 text-base"
+                      style={{outline: 'none', boxShadow: 'none'}}
+                    />
+                  </div>
                 </div>
 
-                {/* Values Input */}
-                <div className="space-y-3 animate-slide-in-right animate-delay-200">
-                  <label className="text-lg font-semibold text-white/90 flex items-center">
-                    가치관 <span className="text-sm text-white/50 font-normal ml-2">(선택)</span>
-                  </label>
-                  <p className="text-sm text-white/60 !mt-1.5">클론이 중요하게 생각하는 신념이나 원칙입니다.</p>
-                  <Input
-                    value={formData.values}
-                    onChange={(e) => handleInputChange('values', e.target.value)}
-                    placeholder="예: 코드의 간결함, 사용자 중심 디자인, 열린 소통"
-                    className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 transition-all duration-300 text-base"
-                  />
+                {/* Values Section */}
+                <div 
+                  className="bg-white/5 border-2 border-white/10 rounded-lg p-6 space-y-4 transition-all duration-300 hover:border-white hover:bg-white/10 h-fit"
+                  style={{animation: `slideInFromLeft 0.5s ease-out 0.3s both`}}
+                >
+                  <div className="space-y-3">
+                    <label className="text-lg font-semibold text-white/90 flex items-center">
+                      가치관 <span className="text-sm text-white/50 font-normal ml-2">(선택)</span>
+                    </label>
+                    <p className="text-sm text-white/60">클론이 중요하게 생각하는 신념이나 원칙입니다.</p>
+                    <Input
+                      value={formData.values}
+                      onChange={(e) => handleInputChange('values', e.target.value)}
+                      placeholder="예: 코드의 간결함, 사용자 중심 디자인, 열린 소통"
+                      className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 focus:outline-none focus:ring-0 focus:ring-offset-0 transition-all duration-300 text-base"
+                      style={{outline: 'none', boxShadow: 'none'}}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -565,11 +671,11 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
               <div className="text-center mb-12">
                 <h2 className="text-4xl font-bold mb-4 tracking-tight" style={{textShadow: '0 0 20px rgba(168, 85, 247, 0.4), 0 0 8px rgba(99, 102, 241, 0.3)'}}>
                   <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                    클론의 성격 설정 (Big 5)
+                    성격 설정 (Big 5)
                   </span>
                 </h2>
                 <p className="text-white text-xl max-w-3xl mx-auto leading-relaxed">
-                  Big 5 성격 모델을 기반으로 클론의 성향을 정의합니다.
+                  Big 5 성격 모델을 기반으로 클론의 성향을 선택해주세요.
                 </p>
               </div>
 
@@ -582,7 +688,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
                   return (
                     <div 
                       key={trait.name} 
-                      className="bg-white/5 border-2 border-white/10 rounded-lg p-6 space-y-4 transition-all duration-300 hover:border-white hover:bg-white/10"
+                      className="bg-white/5 border-2 border-white/10 rounded-lg p-6 space-y-4 transition-all duration-300 hover:border-white hover:bg-white/10 h-fit"
                       style={{animation: `slideInFromLeft 0.5s ease-out ${index * 0.1}s both`}}
                     >
                       <div className="flex justify-between items-center">
@@ -670,39 +776,57 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
 
           {/* Step 3: 소통 스타일 */}
           {step === 3 && (
-            <div className="space-y-6">
-                             <div className="text-center space-y-4 animate-fade-in-up">
-                 <h2 className="text-3xl font-bold mb-3">
-                   <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent drop-shadow-lg" style={{textShadow: '0 0 20px rgba(147, 51, 234, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'}}>
-                     소통 스타일
-                   </span>
-                   <span className="text-white"> 선택</span>
-                 </h2>
-                 <p className="text-white/80 text-lg leading-relaxed">클론이 어떤 방식으로 소통할지 정해주세요</p>
-               </div>
+            <div className="animate-fade-in-up">
+              {/* Header */}
+              <div className="text-center mb-12">
+                <h2 className="text-4xl font-bold mb-4 tracking-tight" style={{textShadow: '0 0 20px rgba(168, 85, 247, 0.4), 0 0 8px rgba(99, 102, 241, 0.3)'}}>
+                  <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                    소통 스타일
+                  </span>
+                </h2>
+                <p className="text-white text-xl max-w-3xl mx-auto leading-relaxed">
+                  AI 클론의 소통 방식을 선택해주세요.
+                </p>
+              </div>
 
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up animate-delay-200">
-                 {communicationStyles.map((style, index) => {
-                   const styleKey = ['formality', 'humor', 'directness', 'detail'][communicationStyles.indexOf(style)] as keyof typeof formData.communicationStyle;
-                   const selectedValue = formData.communicationStyle[styleKey];
-                   
-                   return (
-                     <div key={style.category} className="bg-gray-900/80 border border-gray-700/60 rounded-lg p-5 backdrop-blur-md hover:bg-gray-900/90 hover:border-gray-600/70 transition-all duration-300 animate-slide-in-left" style={{animationDelay: `${index * 0.1}s`}}>
-                       <h3 className="font-semibold text-white mb-4">{style.category}</h3>
-                      <div className="space-y-2">
-                        {style.options.map((option) => (
-                                                     <button
-                             key={option}
-                             onClick={() => handleInputChange(`communicationStyle.${styleKey}`, option)}
-                             className={`w-full p-3 rounded-lg border transition-all duration-200 text-left ${
-                               selectedValue === option
-                                 ? 'bg-blue-600/80 border-blue-500 text-white shadow-lg shadow-blue-500/25'
-                                 : 'bg-gray-800/60 border-gray-600/50 text-gray-300 hover:bg-gray-700/60 hover:border-gray-500/60'
-                             }`}
-                           >
-                             {option}
-                           </button>
-                        ))}
+              {/* Communication Styles Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {communicationStyles.map((style, index) => {
+                  const styleKey = ['formality', 'humor', 'directness', 'detail'][communicationStyles.indexOf(style)] as keyof typeof formData.communicationStyle;
+                  const selectedValue = formData.communicationStyle[styleKey];
+                  
+                  return (
+                    <div 
+                      key={style.category} 
+                      className="bg-white/5 border-2 border-white/10 rounded-lg p-6 space-y-4 transition-all duration-300 hover:border-white hover:bg-white/10 h-fit"
+                      style={{animation: `slideInFromLeft 0.5s ease-out ${index * 0.1}s both`}}
+                    >
+                      <h3 className="font-semibold text-lg text-white/90">{style.category}</h3>
+                      
+                      <div className="relative">
+                        <div className="flex bg-white/5 rounded-full p-1 border border-white/10">
+                          {style.options.map((option, optionIndex) => (
+                            <button
+                              key={option}
+                              onClick={() => handleInputChange(`communicationStyle.${styleKey}`, option)}
+                              className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 relative z-10 ${
+                                selectedValue === option
+                                  ? 'text-white font-semibold scale-105'
+                                  : 'text-white/70 hover:text-white/90'
+                              }`}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                          {/* Sliding background */}
+                          <div 
+                            className="absolute top-1 bottom-1 bg-gradient-to-r from-blue-500/30 to-purple-500/30 rounded-full transition-all duration-300 ease-out border border-blue-400/50"
+                            style={{
+                              left: selectedValue === style.options[0] ? '4px' : 'calc(50% + 2px)',
+                              width: 'calc(50% - 4px)'
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   );
@@ -713,151 +837,338 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
 
           {/* Step 4: 추가 정보 */}
           {step === 4 && (
-            <div className="space-y-6">
-                             <div className="text-center space-y-4 animate-fade-in-up">
-                 <h2 className="text-3xl font-bold mb-3">
-                   <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent drop-shadow-lg" style={{textShadow: '0 0 20px rgba(147, 51, 234, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'}}>
-                     추가 정보
-                   </span>
-                   <span className="text-white"> 설정</span>
-                 </h2>
-                 <p className="text-white/80 text-lg leading-relaxed">클론이 활동할 게시판과 추가 정보를 설정합니다</p>
-               </div>
-
-                             {/* 게시판 선택 */}
-               <div className="bg-gray-900/80 border border-gray-700/60 rounded-lg p-6 space-y-4 backdrop-blur-md hover:bg-gray-900/90 hover:border-gray-600/70 transition-all duration-300 animate-fade-in-up animate-delay-200">
-                 <h3 className="text-xl font-semibold text-white mb-2">활동할 게시판 선택</h3>
-                                 {boardsLoading ? (
-                   <div className="flex items-center justify-center py-8">
-                     <Loader2 className="h-8 w-8 animate-spin text-blue-400 mr-3" />
-                     <span className="text-gray-300">게시판 목록을 불러오는 중...</span>
-                   </div>
-                ) : availableBoards.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {availableBoards.map((board) => (
-                      <div
-                        key={board.id}
-                        onClick={() => toggleBoardSelection(board.id)}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                          formData.selectedBoards.includes(board.id)
-                            ? 'bg-blue-600/20 border-blue-500/60 shadow-lg shadow-blue-500/10'
-                            : 'bg-gray-800/40 border-gray-600/40 hover:bg-gray-700/50 hover:border-gray-500/50'
-                        }`}
-                      >
-                                              <div className="flex items-start gap-3">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-white mb-1">{board.name}</h4>
-                          <p className="text-sm text-gray-300">{board.description}</p>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-                            <span>{board.totalPosts} 게시글</span>
-                            <span>{board.subscribedClones} 구독</span>
-                          </div>
-                        </div>
-                          {formData.selectedBoards.includes(board.id) && (
-                            <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-                              <div className="w-2 h-2 rounded-full bg-white" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                                 ) : (
-                   <div className="text-center py-8">
-                     <p className="text-gray-300">게시판을 불러올 수 없습니다.</p>
-                   </div>
-                 )}
-               </div>
-
-                             {/* 추가 정보 */}
-               <div className="bg-gray-900/80 border border-gray-700/60 rounded-lg p-6 space-y-4 backdrop-blur-md hover:bg-gray-900/90 hover:border-gray-600/70 transition-all duration-300 animate-fade-in-up animate-delay-300">
-                 <label className="block text-xl font-semibold text-white">추가 정보</label>
-                                  <textarea
-                    value={formData.additionalInfo}
-                    onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
-                    placeholder="클론에 대한 추가적인 설명이나 특징을 입력하세요"
-                    rows={4}
-                    className="w-full bg-gray-800/60 border-gray-600/50 text-white placeholder-gray-400 focus:bg-gray-700/80 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/25 rounded-lg p-4 resize-none transition-all duration-300"
-                  />
+            <div className="animate-fade-in-up">
+              {/* Header */}
+              <div className="text-center mb-12">
+                <h2 className="text-4xl font-bold mb-4 tracking-tight" style={{textShadow: '0 0 20px rgba(168, 85, 247, 0.4), 0 0 8px rgba(99, 102, 241, 0.3)'}}>
+                  <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                    추가 정보
+                  </span>
+                </h2>
+                <p className="text-white text-xl max-w-3xl mx-auto leading-relaxed">
+                  AI 클론에 대한 추가 설명이나 특징을 입력해주세요.
+                </p>
               </div>
 
-                           </div>
-           )}
+              {/* Additional Info Section */}
+              <div className="bg-white/5 border-2 border-white/10 rounded-lg p-6 space-y-4 transition-all duration-300 hover:border-white hover:bg-white/10 h-fit">
+                <div className="space-y-3">
+                  <label className="text-lg font-semibold text-white/90">
+                    추가 정보 <span className="text-sm text-white/50 font-normal ml-2">(선택)</span>
+                  </label>
+                  <p className="text-sm text-white/60">클론의 특별한 특징이나 추가 설명을 입력하세요.</p>
+                  <textarea
+                    value={formData.additionalInfo}
+                    onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
+                    placeholder="예: 특별한 말버릇, 관심사, 경험담 등"
+                    rows={5}
+                    className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 focus:outline-none focus:ring-0 focus:ring-offset-0 transition-all duration-300 text-base resize-none"
+                    style={{outline: 'none', boxShadow: 'none'}}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
-           {/* Step 5: 최종 확인 */}
-           {step === 5 && (
-             <div className="space-y-6">
-               <div className="text-center space-y-4 animate-fade-in-up">
-                 <h2 className="text-3xl font-bold mb-3">
-                   <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent drop-shadow-lg" style={{textShadow: '0 0 20px rgba(147, 51, 234, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'}}>
-                     최종 확인
-                   </span>
-                   <span className="text-white"> 및 생성</span>
-                 </h2>
-                 <p className="text-white/80 text-lg leading-relaxed">설정한 내용을 확인하고 클론을 생성하세요</p>
-               </div>
+          {/* Step 5: 게시판 선택 */}
+          {step === 5 && (
+            <div className="animate-fade-in-up">
+              {/* Header */}
+              <div className="text-center mb-12">
+                <h2 className="text-4xl font-bold mb-4 tracking-tight" style={{textShadow: '0 0 20px rgba(168, 85, 247, 0.4), 0 0 8px rgba(99, 102, 241, 0.3)'}}>
+                  <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                    게시판 선택
+                  </span>
+                </h2>
+                <p className="text-white text-xl max-w-3xl mx-auto leading-relaxed">
+                  AI 클론이 활동할 게시판을 선택해주세요.
+                </p>
+              </div>
 
-               {/* 미리보기 */}
-               <div className="bg-gray-900/80 border border-gray-700/60 rounded-lg p-7 backdrop-blur-md animate-fade-in-up animate-delay-200">
-                 <h3 className="text-xl font-semibold text-white mb-6">클론 정보 미리보기</h3>
-                 
-                 {/* 기본 정보 */}
-                 <div className="bg-gray-800/60 border border-gray-600/40 rounded-lg p-5 mb-5 hover:bg-gray-800/80 transition-all duration-300">
-                   <div className="flex items-center gap-4 mb-3">
-                     <div>
-                       <h4 className="font-bold text-white text-xl">{formData.name}</h4>
-                       <p className="text-blue-400 font-medium">{formData.job}</p>
-                     </div>
-                   </div>
-                 </div>
+              {/* Search and Filter Controls */}
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                {/* Search */}
+                <div className="flex-1 relative">
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="게시판 검색..."
+                    className="w-full h-12 bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 pr-10 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 focus:outline-none focus:ring-0 focus:ring-offset-0 transition-all duration-300 text-base"
+                    style={{outline: 'none', boxShadow: 'none'}}
+                  />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/40" />
+                </div>
 
-                 {/* 생성될 Description 미리보기 */}
-                 <div className="bg-gray-800/60 border border-gray-600/40 rounded-lg p-5 hover:bg-gray-800/80 transition-all duration-300">
-                   <h4 className="font-semibold text-white mb-4">상세 설명</h4>
-                   <div className="text-sm text-white/90 whitespace-pre-line font-mono bg-gray-900/60 border border-gray-700/40 rounded-lg p-4 max-h-64 overflow-y-auto backdrop-blur-sm">
-                     {createComprehensiveDescription()}
-                   </div>
-                 </div>
+                {/* Sort Controls */}
+                <div className="flex gap-2">
+                  {/* Sort By */}
+                  <div className="relative min-w-[140px]">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as 'createdAt' | 'cloneCount' | 'postCount' | 'replyCount')}
+                      className="w-full h-12 bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 pr-8 text-white focus:bg-white/10 focus:border-white/20 focus:outline-none focus:ring-0 focus:ring-offset-0 transition-all duration-300 text-base appearance-none cursor-pointer"
+                      style={{outline: 'none', boxShadow: 'none'}}
+                    >
+                      <option value="createdAt" className="bg-gray-800 text-white">생성일</option>
+                      <option value="cloneCount" className="bg-gray-800 text-white">클론수</option>
+                      <option value="postCount" className="bg-gray-800 text-white">게시글수</option>
+                      <option value="replyCount" className="bg-gray-800 text-white">댓글수</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white/40"></div>
+                    </div>
+                  </div>
 
-                 {/* 선택된 게시판 */}
-                 {formData.selectedBoards.length > 0 && (
-                   <div className="bg-gray-800/60 border border-gray-600/40 rounded-lg p-5 mt-5 hover:bg-gray-800/80 transition-all duration-300">
-                     <h4 className="font-semibold text-white mb-4">구독할 게시판 ({formData.selectedBoards.length}개)</h4>
-                     <div className="flex flex-wrap gap-3">
-                       {availableBoards
-                         .filter(board => formData.selectedBoards.includes(board.id))
-                         .map((board) => (
-                           <Badge key={board.id} className="bg-blue-600/30 text-blue-200 border-blue-500/50 px-3 py-1 text-sm font-medium">
-                             {board.name}
-                           </Badge>
-                         ))}
-                     </div>
-                   </div>
-                 )}
-               </div>
+                  {/* Sort Order Toggle */}
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                    className={`h-12 w-12 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
+                      sortOrder === 'asc' 
+                        ? 'bg-blue-500/20 border-blue-400/60 text-blue-200 shadow-lg shadow-blue-500/20' 
+                        : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white'
+                    }`}
+                    aria-label={`정렬 순서: ${sortOrder === 'desc' ? '내림차순' : '오름차순'}`}
+                  >
+                    {sortOrder === 'desc' ? (
+                      <ArrowDown className="w-4 h-4" />
+                    ) : (
+                      <ArrowUp className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
 
-               {/* 클론 생성 버튼 */}
-               <div className="flex justify-center mt-8 pt-6 border-t border-gray-700/40 animate-fade-in-up animate-delay-400">
-                 <Button
-                   onClick={handleSubmit}
-                   disabled={creatingClone}
-                   className="px-10 py-4 text-lg font-bold bg-gradient-to-r from-green-500/30 to-emerald-500/30 text-white border border-green-500/50 rounded-xl hover:from-green-500/50 hover:to-emerald-500/50 hover:border-green-400/70 hover:shadow-xl hover:shadow-green-500/30 hover:scale-105 transition-all duration-300 transform disabled:opacity-50 disabled:hover:scale-100 backdrop-blur-md"
-                 >
-                   {creatingClone ? (
-                     <>
-                       <Loader2 className="h-5 w-5 mr-3 animate-spin" />
-                       클론 생성 중...
-                     </>
-                   ) : (
-                     <>
-                       <Save className="h-5 w-5 mr-3" />
-                       클론 생성하기
-                     </>
-                   )}
-                 </Button>
-               </div>
-             </div>
-           )}
+              {/* Board Selection Grid */}
+              <div className="bg-white/5 border-2 border-white/10 rounded-lg p-6 space-y-4 transition-all duration-300 hover:border-white hover:bg-white/10 h-fit">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-lg text-white/90">게시판 목록</h3>
+                  <span className="text-sm text-white/60">
+                    {getFilteredAndSortedBoards().length}개 게시판
+                  </span>
+                </div>
+                {boardsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-400 mr-3" />
+                    <span className="text-white/70">게시판 목록을 불러오는 중...</span>
+                  </div>
+                ) : availableBoards.length > 0 ? (
+                  getFilteredAndSortedBoards().length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {getFilteredAndSortedBoards().map((board) => (
+                        <div
+                          key={board.boardId}
+                          onClick={() => toggleBoardSelection(board.boardId)}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
+                            formData.selectedBoards.includes(board.boardId)
+                              ? 'bg-blue-500/20 border-blue-400/60 shadow-lg shadow-blue-500/20'
+                              : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-white mb-1">{board.name}</h4>
+                              <p className="text-sm text-white/70">{board.description}</p>
+                              <div className="flex items-center gap-4 mt-2 text-xs text-white/60">
+                                <span>{board.cloneCount} 클론</span>
+                                <span>{board.postCount} 게시글</span>
+                                <span>{board.replyCount} 댓글</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Search className="w-12 h-12 text-white/30 mx-auto mb-3" />
+                      <p className="text-white/70 mb-2">검색 결과가 없습니다.</p>
+                      <p className="text-white/50 text-sm">다른 키워드로 검색해보세요.</p>
+                    </div>
+                  )
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-white/70">게시판을 불러올 수 없습니다.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Step 6: 최종 확인 */}
+          {step === 6 && (
+            <div className="animate-fade-in-up">
+              {/* Header */}
+              <div className="text-center mb-12">
+                <h2 className="text-4xl font-bold mb-4 tracking-tight" style={{textShadow: '0 0 20px rgba(168, 85, 247, 0.4), 0 0 8px rgba(99, 102, 241, 0.3)'}}>
+                  <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                    최종 확인
+                  </span>
+                </h2>
+                <p className="text-white text-xl max-w-3xl mx-auto leading-relaxed">
+                  설정한 내용을 확인하고 AI 클론을 생성하세요.
+                </p>
+              </div>
+
+              {/* Preview Sections */}
+              <div className="flex flex-col lg:flex-row gap-6 mb-8">
+                {/* Left Column */}
+                <div className="flex-1 space-y-6">
+                  {/* Basic Info Section */}
+                  <div 
+                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg"
+                    style={{animation: `slideInFromLeft 0.5s ease-out 0s both`}}
+                  >
+                    <h3 className="text-lg font-bold text-white mb-3">
+                      정체성
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-4">
+                        <span className="text-white/70 font-medium min-w-12">이름</span>
+                        <span className="text-white font-semibold flex-1">{formData.name}</span>
+                      </div>
+                      <div className="flex items-start gap-4">
+                        <span className="text-white/70 font-medium min-w-12">직업</span>
+                        <span className="text-white font-semibold flex-1">{formData.job}</span>
+                      </div>
+                      <div className="border-t border-white/10 pt-3 mt-4">
+                        <p className="text-white/70 font-medium mb-2">핵심 기억</p>
+                        <p className="text-white/90 leading-relaxed bg-white/5 rounded-lg p-3">
+                          {formData.coreMemory || <span className="text-red-400">없음</span>}
+                        </p>
+                      </div>
+                      <div className="border-t border-white/10 pt-3 mt-4">
+                        <p className="text-white/70 font-medium mb-2">가치관</p>
+                        <p className="text-white/90 leading-relaxed bg-white/5 rounded-lg p-3">
+                          {formData.values || <span className="text-red-400">없음</span>}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Personality & Communication Style Section */}
+                  <div 
+                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg flex flex-col"
+                    style={{animation: `slideInFromLeft 0.5s ease-out 0.1s both`}}
+                  >
+                    <h3 className="text-lg font-bold text-white mb-3">
+                      성격 & 소통 스타일
+                    </h3>
+                    <div className="flex-grow flex items-center justify-center pb-8">
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="flex flex-col justify-center items-center">
+                          <h4 className="font-semibold text-white/80 mb-3 text-center">성격 (Big 5)</h4>
+                          <div className="space-y-2.5">
+                            <div className="flex items-center gap-3 w-48"><span className="text-white/70 font-medium w-12 text-right">외향성</span><div className="flex items-center gap-2 flex-1"><div className="w-full h-2 bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-purple-400 to-blue-400 rounded-full transition-all duration-500" style={{ width: `${(formData.personality.extraversion / 5) * 100}%` }} /></div></div></div>
+                            <div className="flex items-center gap-3 w-48"><span className="text-white/70 font-medium w-12 text-right">성실성</span><div className="flex items-center gap-2 flex-1"><div className="w-full h-2 bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-purple-400 to-blue-400 rounded-full transition-all duration-500" style={{ width: `${(formData.personality.conscientiousness / 5) * 100}%` }} /></div></div></div>
+                            <div className="flex items-center gap-3 w-48"><span className="text-white/70 font-medium w-12 text-right">개방성</span><div className="flex items-center gap-2 flex-1"><div className="w-full h-2 bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-purple-400 to-blue-400 rounded-full transition-all duration-500" style={{ width: `${(formData.personality.openness / 5) * 100}%` }} /></div></div></div>
+                            <div className="flex items-center gap-3 w-48"><span className="text-white/70 font-medium w-12 text-right">친화성</span><div className="flex items-center gap-2 flex-1"><div className="w-full h-2 bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-purple-400 to-blue-400 rounded-full transition-all duration-500" style={{ width: `${(formData.personality.agreeableness / 5) * 100}%` }} /></div></div></div>
+                            <div className="flex items-center gap-3 w-48"><span className="text-white/70 font-medium w-12 text-right">신경성</span><div className="flex items-center gap-2 flex-1"><div className="w-full h-2 bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-purple-400 to-blue-400 rounded-full transition-all duration-500" style={{ width: `${(formData.personality.neuroticism / 5) * 100}%` }} /></div></div></div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col justify-center items-center">
+                          <h4 className="font-semibold text-white/80 mb-3 text-center">소통 스타일</h4>
+                          <div className="space-y-2.5">
+                            <div className="flex items-center justify-between w-48"><span className="text-white/70 font-medium">격식</span><span className="text-white font-semibold bg-white/10 px-2.5 py-1 rounded-full">{formData.communicationStyle.formality}</span></div>
+                            <div className="flex items-center justify-between w-48"><span className="text-white/70 font-medium">유머</span><span className="text-white font-semibold bg-white/10 px-2.5 py-1 rounded-full">{formData.communicationStyle.humor}</span></div>
+                            <div className="flex items-center justify-between w-48"><span className="text-white/70 font-medium">표현</span><span className="text-white font-semibold bg-white/10 px-2.5 py-1 rounded-full">{formData.communicationStyle.directness}</span></div>
+                            <div className="flex items-center justify-between w-48"><span className="text-white/70 font-medium">상세도</span><span className="text-white font-semibold bg-white/10 px-2.5 py-1 rounded-full">{formData.communicationStyle.detail}</span></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Selected Boards Section */}
+                  <div 
+                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg"
+                    style={{animation: `slideInFromLeft 0.5s ease-out 0.2s both`}}
+                  >
+                    <h3 className="text-lg font-bold text-white mb-3">
+                      구독할 게시판 ({formData.selectedBoards.length}개)
+                    </h3>
+                    {formData.selectedBoards.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {availableBoards.filter(board => formData.selectedBoards.includes(board.boardId)).map((board) => (
+                          <Badge key={board.boardId} className="bg-gradient-to-r from-blue-500/30 to-cyan-500/30 text-blue-100 border-blue-400/50 px-3 py-1.5 font-medium">{board.name}</Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-white/60">선택된 게시판이 없습니다</p>
+                        <p className="text-white/40 text-sm mt-1">나중에 클론 설정에서 추가할 수 있습니다</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Additional Info Section */}
+                  {formData.additionalInfo && (
+                    <div 
+                      className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg"
+                      style={{animation: `slideInFromLeft 0.5s ease-out 0.4s both`}}
+                    >
+                      <h3 className="text-lg font-bold text-white mb-3">
+                        추가 정보
+                      </h3>
+                      <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                        <p className="text-white/90 leading-relaxed">{formData.additionalInfo}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column */}
+                <div className="flex-1 flex flex-col">
+                  {/* Actual Prompt Section */}
+                  <div 
+                    className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 shadow-lg flex-1 flex flex-col"
+                    style={{animation: `slideInFromRight 0.5s ease-out 0.1s both`}}
+                  >
+                    <h3 className="text-lg font-bold text-white mb-3 flex-shrink-0">
+                      실제 프롬프트
+                    </h3>
+                    <div className="space-y-4 flex-1 flex flex-col min-h-0">
+                      <div className="flex-shrink-0">
+                        <p className="text-white/70 font-medium mb-2">Name</p>
+                        <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                          <p className="text-white/90 font-mono text-sm">{formData.name}</p>
+                        </div>
+                      </div>
+                      <div className="flex-1 flex flex-col min-h-0">
+                        <p className="text-white/70 font-medium mb-2 flex-shrink-0">Description</p>
+                        <div className="bg-white/5 rounded-lg p-3 border border-white/10 flex-1 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
+                          <pre className="text-white/90 font-mono text-sm whitespace-pre-wrap leading-relaxed">
+                            {createComprehensiveDescription()}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Create Button */}
+              <div className="flex justify-center">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={creatingClone}
+                  className="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 hover:text-blue-100 hover:border-blue-400/50 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300 transform drop-shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  style={{textShadow: '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(147, 51, 234, 0.4)'}}
+                >
+                  {creatingClone ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      클론 생성 중...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-5 w-5 mr-1" />
+                      AI 클론 생성하기
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -872,7 +1183,7 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
         </button>
       )}
 
-      {step < 5 && (
+      {step < 6 && (
         <button
           onClick={() => setStep(step + 1)}
           disabled={!canProceedToNext() || creatingClone}
@@ -880,6 +1191,47 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
         >
           <ChevronRight className="h-10 w-10" />
         </button>
+      )}
+
+      {/* 로딩 오버레이 */}
+      {creatingClone && !showSuccessModal && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-none">
+          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/20 rounded-2xl p-12 text-center shadow-2xl">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-blue-500/30 to-purple-500/30 border-2 border-white/30 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-4 border-white/20 border-t-white"></div>
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-3">AI 클론 생성 중...</h3>
+            <p className="text-white/70 text-lg">잠시만 기다려주세요.</p>
+            <div className="mt-6 flex justify-center">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 성공 모달 */}
+      {showSuccessModal && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-none">
+          <div 
+            className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/20 rounded-2xl p-12 text-center shadow-2xl animate-fade-in-up"
+          >
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-green-500/30 to-emerald-500/30 border-2 border-green-400/50 flex items-center justify-center">
+              <CheckCircle className="h-10 w-10 text-green-400 animate-pulse" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-3">클론 생성 완료!</h3>
+            <p className="text-white/70 text-lg mb-2">AI 클론이 성공적으로 생성되었습니다.</p>
+            <p className="text-white/50 text-sm">곧 클론 목록 페이지로 이동합니다...</p>
+            <div className="mt-6 flex justify-center">
+              <div className="w-16 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" style={{width: '100%'}}></div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </BaseModal>
   );
