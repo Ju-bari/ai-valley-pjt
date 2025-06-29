@@ -7,8 +7,8 @@ import { Button } from '../../../shared/components/ui/button';
 import { Input } from '../../../shared/components/ui/input';
 import Layout from '../../../shared/components/Layout';
 import { getCloneById, updateCloneInfo, getCloneBoards, getClonePosts, getCloneStatistics, subscribeCloneToBoard, unsubscribeCloneFromBoard } from '../services/cloneService';
-import { createPost } from '../../board/services/boardService';
 import { type CloneInfoResponse, type BoardInfoResponse, type PostInfoResponse, type CloneStatisticsResponse } from '../types';
+import PostCreateModal from '../../board/components/PostCreateModal';
 
 function CloneDetailPage() {
   const { cloneId } = useParams<{ cloneId: string }>();
@@ -25,66 +25,19 @@ function CloneDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [boardSubscriptions, setBoardSubscriptions] = useState<{[key: string]: boolean}>({});
   const [subscriptionLoading, setSubscriptionLoading] = useState<{[key: string]: boolean}>({});
-  const [creatingPost, setCreatingPost] = useState<{[key: string]: boolean}>({});
   const [lastPostCreationTime, setLastPostCreationTime] = useState<{[key: string]: number}>({});
-  const [showCreatingModal, setShowCreatingModal] = useState(false);
-  const [currentCreatingBoardName, setCurrentCreatingBoardName] = useState('');
-  const [creationFailed, setCreationFailed] = useState(false);
-  const [creationSuccess, setCreationSuccess] = useState(false);
-  const [createdPostData, setCreatedPostData] = useState<any>(null);
+  const [postCreateModal, setPostCreateModal] = useState<{
+    isOpen: boolean;
+    boardId: number;
+    boardName: string;
+  }>({
+    isOpen: false,
+    boardId: 0,
+    boardName: ''
+  });
   const [postSortBy, setPostSortBy] = useState<'latest' | 'oldest'>('latest');
 
-  // 모달 닫기 함수
-  const handleCloseModal = () => {
-    setShowCreatingModal(false);
-    setCreationFailed(false);
-    setCreationSuccess(false);
-    setCreatedPostData(null);
-  };
 
-  // 페이지 이탈 방지 (브라우저 탭 닫기/새로고침)
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (showCreatingModal) {
-        e.preventDefault();
-        e.returnValue = '안정적인 서비스를 위해 페이지에 머물러 주세요';
-        return '안정적인 서비스를 위해 페이지에 머물러 주세요';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [showCreatingModal]);
-
-  // 브라우저 뒤로가기 방지
-  useEffect(() => {
-    if (showCreatingModal) {
-      // 현재 URL에 상태를 추가하여 뒤로가기 방지
-      window.history.pushState(null, '', window.location.href);
-      
-      const handlePopState = (e: PopStateEvent) => {
-        if (showCreatingModal) {
-          // 뒤로가기 시도 시 다시 현재 페이지로 이동
-          window.history.pushState(null, '', window.location.href);
-          
-          // 사용자에게 알림
-          if (window.confirm('게시글 작성이 진행 중입니다. 정말로 페이지를 벗어나시겠습니까?\n안정적인 서비스를 위해 페이지에 머물러 주세요.')) {
-            // 사용자가 정말로 떠나고 싶다면 모달을 닫고 뒤로가기 허용
-            setShowCreatingModal(false);
-            window.history.back();
-          }
-        }
-      };
-
-      window.addEventListener('popstate', handlePopState);
-      
-      return () => {
-        window.removeEventListener('popstate', handlePopState);
-      };
-    }
-  }, [showCreatingModal]);
 
   useEffect(() => {
     const fetchCloneData = async () => {
@@ -282,7 +235,7 @@ function CloneDetailPage() {
   };
 
   // Handle create post
-  const handleCreatePost = async (boardId: number, e: React.MouseEvent) => {
+  const handleCreatePost = (boardId: number, e: React.MouseEvent) => {
     e.stopPropagation();
     
     if (!clone) return;
@@ -304,42 +257,33 @@ function CloneDetailPage() {
     const board = boards.find(b => b.boardId === boardId);
     const boardName = board?.name || '게시판';
     
-    setCreatingPost(prev => ({ ...prev, [boardKey]: true }));
+    // 쿨다운 시작
     setLastPostCreationTime(prev => ({ ...prev, [boardKey]: now }));
-    setCurrentCreatingBoardName(boardName);
-    setShowCreatingModal(true);
+    
+    // PostCreateModal 열기
+    setPostCreateModal({
+      isOpen: true,
+      boardId: boardId,
+      boardName: boardName
+    });
+  };
 
-    try {
-      const createdPostData = await createPost({
-        boardId: boardId,
-        cloneId: clone.cloneId
-      });
-      
-      // 성공 시 바로 성공 모달 표시
-      setCreatedPostData({
-        postId: createdPostData.postId,
-        boardId: createdPostData.boardId,
-        boardName: createdPostData.boardName,
-        cloneName: createdPostData.cloneName,
-        postTitle: createdPostData.postTitle,
-        postContent: createdPostData.postContent,
-        postViewCount: createdPostData.postViewCount,
-        createdAt: createdPostData.createdAt
-      });
-      setCreationSuccess(true);
-      setCreatingPost(prev => ({ ...prev, [boardKey]: false }));
-    } catch (error) {
-      console.error('Error creating post:', error);
-      
-      // 실패 시 3초간 로딩을 계속 보여준 후 실패 상태로 변경
-      setTimeout(() => {
-        setCreationFailed(true);
-        setCreatingPost(prev => ({ ...prev, [boardKey]: false }));
-      }, 3000);
-      
-      // 실패 시 쿨다운 시간 롤백
-      setLastPostCreationTime(prev => ({ ...prev, [boardKey]: lastCreationTime }));
-    }
+  const handlePostCreateModalClose = () => {
+    setPostCreateModal({
+      isOpen: false,
+      boardId: 0,
+      boardName: ''
+    });
+  };
+
+  const handlePostCreateFailed = () => {
+    // 실패 시 쿨다운 시간 롤백
+    const boardKey = postCreateModal.boardId.toString();
+    setLastPostCreationTime(prev => {
+      const newTimes = { ...prev };
+      delete newTimes[boardKey]; // 쿨다운 제거
+      return newTimes;
+    });
   };
 
   if (loading) {
@@ -733,16 +677,12 @@ function CloneDetailPage() {
                             <div className="border-t border-white/10 pt-3 mt-3">
                               <Button
                                 onClick={(e) => handleCreatePost(board.boardId, e)}
-                                disabled={creatingPost[board.boardId.toString()] || false}
-                                className="w-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 hover:text-blue-100 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105 transition-all duration-300 transform drop-shadow-lg"
+                                style={{textShadow: '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(147, 51, 234, 0.4)'}}
                                 size="sm"
                               >
-                                {creatingPost[board.boardId.toString()] ? (
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                ) : (
-                                  <PlusCircle className="h-4 w-4 mr-2" />
-                                )}
-                                {creatingPost[board.boardId.toString()] ? '생성 중...' : '게시글 작성'}
+                                <PlusCircle className="h-4 w-4 mr-2" />
+                                게시글 작성
                               </Button>
                             </div>
                           )}
@@ -839,229 +779,16 @@ function CloneDetailPage() {
           </div>
         </div>
 
-        {/* 게시글 작성 중 모달 */}
-        {showCreatingModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-purple-500/20 via-blue-500/15 to-pink-500/20 backdrop-blur-xl">
-            <div 
-              className={`relative backdrop-blur-xl rounded-3xl p-8 mx-4 border shadow-2xl transition-all duration-700 ease-in-out ${
-                creationFailed 
-                  ? 'border-red-400/40 shadow-red-500/20 max-w-md w-full' 
-                  : creationSuccess
-                  ? 'border-green-400/40 shadow-green-500/20 max-w-2xl w-full'
-                  : 'border-white/40 shadow-purple-500/20 max-w-md w-full'
-              }`}
-              style={{
-                background: creationFailed 
-                  ? 'linear-gradient(45deg, rgba(255,255,255,0.2), rgba(248,113,113,0.3), rgba(251,146,60,0.3), rgba(255,255,255,0.2))'
-                  : creationSuccess
-                  ? 'linear-gradient(45deg, rgba(255,255,255,0.3), rgba(34,197,94,0.3), rgba(16,185,129,0.3), rgba(255,255,255,0.3))'
-                  : 'linear-gradient(45deg, rgba(255,255,255,0.3), rgba(147,197,253,0.4), rgba(196,181,253,0.4), rgba(255,255,255,0.3))',
-                backgroundSize: '400% 400%',
-                animation: creationFailed 
-                  ? 'gradientMoveError 3s ease infinite' 
-                  : creationSuccess
-                  ? 'gradientMove 4s ease infinite'
-                  : 'gradientMove 4s ease infinite'
-              }}
-            >
-              {/* 모달 내용 */}
-              <div className="text-center">
-                <div className="mb-6">
-                  <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center border ${
-                    creationFailed 
-                      ? 'bg-gradient-to-r from-red-500/30 to-orange-500/30 border-red-400/30' 
-                      : creationSuccess
-                      ? 'bg-gradient-to-r from-green-500/30 to-emerald-500/30 border-green-400/30'
-                      : 'bg-gradient-to-r from-purple-500/30 to-blue-500/30 border-white/30'
-                  }`}>
-                    {creationFailed ? (
-                      <div 
-                        className="w-8 h-8 rounded-full bg-gradient-to-r from-red-400 to-orange-400"
-                        style={{
-                          animation: 'bounceIn 0.8s ease-out'
-                        }}
-                      ></div>
-                    ) : creationSuccess ? (
-                      <div 
-                        className="w-8 h-8 rounded-full bg-gradient-to-r from-green-400 to-emerald-400"
-                        style={{
-                          animation: 'bounceIn 0.8s ease-out'
-                        }}
-                      ></div>
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 animate-pulse"></div>
-                    )}
-                  </div>
-                  <h3 
-                    className="text-2xl font-bold text-white mb-2 drop-shadow-lg"
-                    style={{
-                      animation: (creationFailed || creationSuccess) ? 'fadeInUp 0.6s ease-out' : 'none'
-                    }}
-                  >
-                    {creationFailed ? '게시글 생성 실패' : creationSuccess ? '게시글 생성 완료' : '게시글 작성 중'}
-                  </h3>
-                  <p 
-                    className="text-white/90 drop-shadow"
-                    style={{
-                      animation: (creationFailed || creationSuccess) ? 'slideInLeft 0.8s ease-out 0.2s both' : 'none'
-                    }}
-                  >
-                    {creationFailed ? (
-                      <>게시글 생성에 실패했습니다. 잠시 후 다시 시도해주세요.</>
-                    ) : creationSuccess ? (
-                      <>
-                        <span className="font-medium text-green-200">{createdPostData?.boardName}</span>에 새로운 게시글이 생성되었습니다
-                      </>
-                    ) : (
-                      <>
-                        <span className="font-medium text-purple-200">{currentCreatingBoardName}</span>에 게시글을 작성하고 있어요
-                      </>
-                    )}
-                  </p>
-                </div>
-
-                {/* 화려한 로딩 바 / 실패 표시 */}
-                {!creationFailed && !creationSuccess && (
-                  <div className="mb-6 relative">
-                    <div className="w-full bg-gray-200/80 rounded-full h-3 overflow-hidden shadow-inner">
-                      {/* 메인 로딩 바 */}
-                      <div className="h-full bg-gradient-to-r from-purple-500 via-pink-500 via-blue-500 via-green-500 to-purple-500 rounded-full animate-loading-bar shadow-lg"></div>
-                    </div>
-                    {/* 글로우 효과 */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 via-pink-500/20 via-blue-500/20 via-green-500/20 to-purple-500/20 blur-sm animate-loading-bar"></div>
-                  </div>
-                )}
-
-                {/* 상태 메시지 */}
-                <div className="space-y-4 text-sm text-white/90 drop-shadow">
-                  {creationFailed ? (
-                    <>
-                      <div 
-                        className="flex items-center justify-center gap-2"
-                        style={{
-                          animation: 'fadeInUp 0.8s ease-out 0.4s both'
-                        }}
-                      >
-                        <div 
-                          className="w-2 h-2 bg-red-400 rounded-full shadow-lg"
-                          style={{
-                            animation: 'bounceIn 0.6s ease-out 0.6s both'
-                          }}
-                        ></div>
-                        <span>게시글 생성에 실패했습니다</span>
-                      </div>
-                      
-                      {/* 닫기 버튼 */}
-                      <div 
-                        className="flex justify-center mt-4"
-                        style={{
-                          animation: 'bounceIn 0.8s ease-out 0.8s both'
-                        }}
-                      >
-                        <button
-                          onClick={handleCloseModal}
-                          className="px-6 py-2 bg-gradient-to-r from-red-500/30 to-orange-500/30 hover:from-red-500/40 hover:to-orange-500/40 border border-red-400/40 rounded-lg text-white font-medium transition-all duration-300 hover:scale-105 backdrop-blur-sm"
-                        >
-                          닫기
-                        </button>
-                      </div>
-                    </>
-                  ) : creationSuccess ? (
-                    <>
-                      <div 
-                        className="flex items-center justify-center gap-2 mb-4"
-                        style={{
-                          animation: 'fadeInUp 0.8s ease-out 0.4s both'
-                        }}
-                      >
-                        <div 
-                          className="w-2 h-2 bg-green-400 rounded-full shadow-lg"
-                          style={{
-                            animation: 'bounceIn 0.6s ease-out 0.6s both'
-                          }}
-                        ></div>
-                        <span>게시글이 성공적으로 생성되었습니다</span>
-                      </div>
-                      
-                      {/* 생성된 게시글 내용 */}
-                      <div 
-                        className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-green-400/30 mb-4 text-left"
-                        style={{
-                          animation: 'slideInLeft 0.8s ease-out 0.6s both'
-                        }}
-                      >
-                        <div className="space-y-4">
-                          <div className="border-b border-white/20 pb-3">
-                            <h4 className="font-bold text-green-200 text-lg">생성된 게시글</h4>
-                          </div>
-                          
-                          <div>
-                            <h5 className="text-white/90 font-bold text-base mb-3 leading-relaxed">
-                              {createdPostData?.postTitle}
-                            </h5>
-                          </div>
-                          
-                          <div>
-                            <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap line-clamp-3">
-                              {createdPostData?.postContent}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* 자세히 보기 & 닫기 버튼 */}
-                      <div 
-                        className="flex justify-center gap-3"
-                        style={{
-                          animation: 'bounceIn 0.8s ease-out 0.8s both'
-                        }}
-                      >
-                        <button
-                          onClick={() => {
-                            handleCloseModal();
-                            navigate(`/boards/${createdPostData?.boardId}/posts/${createdPostData?.postId}`);
-                          }}
-                          className="px-6 py-2 bg-gradient-to-r from-blue-500/30 to-cyan-500/30 hover:from-blue-500/40 hover:to-cyan-500/40 border border-blue-400/40 rounded-lg text-white font-medium transition-all duration-300 hover:scale-105 backdrop-blur-sm"
-                        >
-                          자세히 보기
-                        </button>
-                        <button
-                          onClick={handleCloseModal}
-                          className="px-6 py-2 bg-gradient-to-r from-green-500/30 to-emerald-500/30 hover:from-green-500/40 hover:to-emerald-500/40 border border-green-400/40 rounded-lg text-white font-medium transition-all duration-300 hover:scale-105 backdrop-blur-sm"
-                        >
-                          닫기
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce shadow-lg"></div>
-                      <span>AI 클론이 게시글을 생성하고 있어요</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 경고/안내 메시지 */}
-                {!creationSuccess && (
-                  <div className={`mt-6 p-3 rounded-lg backdrop-blur-sm ${
-                    creationFailed 
-                      ? 'bg-red-500/20 border border-red-400/40' 
-                      : 'bg-yellow-500/20 border border-yellow-400/40'
-                  }`}>
-                    <p className={`text-sm drop-shadow ${
-                      creationFailed ? 'text-red-100' : 'text-yellow-100'
-                    }`}>
-                      {creationFailed 
-                        ? '❌ 게시글 생성에 실패했습니다. 네트워크 상태를 확인해주세요.'
-                        : '⚠️ 안정적인 서비스를 위해 페이지를 벗어나지 말아주세요'
-                      }
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Post Create Modal */}
+        <PostCreateModal
+          isOpen={postCreateModal.isOpen}
+          onClose={handlePostCreateModalClose}
+          boardId={postCreateModal.boardId}
+          cloneId={clone?.cloneId || 0}
+          cloneName={clone?.name || ''}
+          boardName={postCreateModal.boardName}
+          onFailed={handlePostCreateFailed}
+        />
       </div>
     </Layout>
   );

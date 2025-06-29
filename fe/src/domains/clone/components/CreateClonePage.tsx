@@ -1,4 +1,4 @@
-import { Bot, ArrowLeft, Save, X, Upload, Sparkles, Brain, MessageSquare, Users, Camera, Plus, Loader2 } from 'lucide-react';
+import { Bot, ArrowLeft, Save, X, Upload, Sparkles, Brain, MessageSquare, Users, Plus, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
 import { Badge } from '../../../shared/components/ui/badge';
@@ -66,14 +66,55 @@ function CreateClonePage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    avatar: '',
     personalityTemplate: null as number | null,
     selectedBoards: [] as number[],
     customTraits: [] as string[],
     newTrait: ''
   });
 
-  const [isUploading, setIsUploading] = useState(false);
+  // 페이지 이탈 방지 (브라우저 탭 닫기/새로고침)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (creatingClone) {
+        e.preventDefault();
+        e.returnValue = '안정적인 서비스를 위해 페이지에 머물러 주세요';
+        return '안정적인 서비스를 위해 페이지에 머물러 주세요';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [creatingClone]);
+
+  // 브라우저 뒤로가기 방지
+  useEffect(() => {
+    if (creatingClone) {
+      // 현재 URL에 상태를 추가하여 뒤로가기 방지
+      window.history.pushState(null, '', window.location.href);
+      
+      const handlePopState = (e: PopStateEvent) => {
+        if (creatingClone) {
+          // 뒤로가기 시도 시 다시 현재 페이지로 이동
+          window.history.pushState(null, '', window.location.href);
+          
+          // 사용자에게 알림
+          if (window.confirm('클론 생성이 진행 중입니다. 정말로 페이지를 벗어나시겠습니까?\n안정적인 서비스를 위해 페이지에 머물러 주세요.')) {
+            // 사용자가 정말로 떠나고 싶다면 뒤로가기 허용
+            setCreatingClone(false);
+            window.history.back();
+          }
+        }
+      };
+
+      window.addEventListener('popstate', handlePopState);
+      
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [creatingClone]);
 
   // Fetch boards when component mounts
   useEffect(() => {
@@ -225,18 +266,6 @@ function CreateClonePage() {
     }));
   };
 
-  const handleAvatarUpload = async () => {
-    setIsUploading(true);
-    // Simulate upload delay
-    setTimeout(() => {
-      setFormData(prev => ({
-        ...prev,
-        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face"
-      }));
-      setIsUploading(false);
-    }, 1500);
-  };
-
   // Create comprehensive description from form data
   const createComprehensiveDescription = (): string => {
     const selectedTemplate = personalityTemplates.find(t => t.id === formData.personalityTemplate);
@@ -317,383 +346,494 @@ function CreateClonePage() {
 
   return (
     <Layout currentPage="create-clone">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Link 
-            to="/clones"
-            className="inline-flex items-center gap-2 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300"
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes gradientMove {
+            0% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: 0% 50%;
+            }
+          }
+          
+          @keyframes fadeInUp {
+            0% {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          @keyframes slideInLeft {
+            0% {
+              opacity: 0;
+              transform: translateX(-30px);
+            }
+            100% {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+          
+          @keyframes bounceIn {
+            0% {
+              opacity: 0;
+              transform: scale(0.3);
+            }
+            50% {
+              opacity: 1;
+              transform: scale(1.05);
+            }
+            70% {
+              transform: scale(0.9);
+            }
+            100% {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+        `
+      }} />
+      
+      {/* 모달 배경 */}
+      <div className="fixed inset-0 z-40 bg-gradient-to-br from-purple-500/20 via-blue-500/15 to-pink-500/20 backdrop-blur-xl">
+        <div className="container mx-auto px-4 py-8 h-full flex items-center justify-center">
+          <div 
+            className="relative backdrop-blur-xl rounded-3xl border shadow-2xl transition-all duration-700 ease-in-out border-white/40 shadow-purple-500/20 w-full max-w-4xl max-h-[90vh] overflow-auto"
+            style={{
+              background: 'linear-gradient(45deg, rgba(255,255,255,0.3), rgba(147,197,253,0.4), rgba(196,181,253,0.4), rgba(255,255,255,0.3))',
+              backgroundSize: '400% 400%',
+              animation: 'gradientMove 4s ease infinite'
+            }}
           >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm">클론 목록으로 돌아가기</span>
-          </Link>
-        </div>
+            {/* 뒤로가기 버튼 */}
+            <div className="absolute top-6 left-6 z-10">
+              <Link 
+                to="/clones"
+                className="inline-flex items-center gap-2 p-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-300"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="text-sm">돌아가기</span>
+              </Link>
+            </div>
 
-        {/* Page Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
-            새로운 AI 클론 생성
-          </h1>
-          <p className="text-white/80">당신만의 AI 클론을 만들어보세요</p>
-          
-          {/* Progress Steps */}
-          <div className="flex items-center justify-center gap-4 mt-6">
-            {[1, 2, 3, 4].map((stepNum) => (
-              <div key={stepNum} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                  step >= stepNum 
-                    ? 'bg-fuchsia-500 text-white' 
-                    : 'bg-white/20 text-white/60'
-                }`}>
-                  {stepNum}
+            {/* 모달 내용 */}
+            <div className="p-8 pt-16">
+              {/* 헤더 */}
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center border bg-gradient-to-r from-purple-500/30 to-blue-500/30 border-white/30">
+                  <Bot className="h-8 w-8 text-white" />
                 </div>
-                {stepNum < 4 && (
-                  <div className={`w-12 h-0.5 mx-2 transition-colors ${
-                    step > stepNum ? 'bg-fuchsia-500' : 'bg-white/20'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-          
-          <div className="flex justify-center gap-8 mt-4 text-sm text-white/80">
-            <span className={step === 1 ? 'text-fuchsia-300' : ''}>기본 정보</span>
-            <span className={step === 2 ? 'text-fuchsia-300' : ''}>성격 설정</span>
-            <span className={step === 3 ? 'text-fuchsia-300' : ''}>게시판 선택</span>
-            <span className={step === 4 ? 'text-fuchsia-300' : ''}>최종 확인</span>
-          </div>
-        </div>
-
-        {/* Step Content */}
-        <Card className="bg-white/10 backdrop-blur-md border border-white/20">
-          <CardContent className="p-8">
-            {/* Step 1: Basic Information */}
-            {step === 1 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <Bot className="h-12 w-12 mx-auto mb-4 text-fuchsia-400" />
-                  <h2 className="text-xl font-bold text-white mb-2">기본 정보를 입력해주세요</h2>
-                  <p className="text-white/80">클론의 이름과 설명을 설정합니다</p>
-                </div>
-
-                {/* Avatar Upload */}
-                <div className="flex flex-col items-center mb-6">
-                  <div className="relative mb-4">
-                    {formData.avatar ? (
-                      <img
-                        src={formData.avatar}
-                        alt="Clone Avatar"
-                        className="w-24 h-24 rounded-3xl object-cover border-4 border-white/30"
+                <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
+                  새로운 AI 클론 생성
+                </h1>
+                <p className="text-white/80 drop-shadow">당신만의 AI 클론을 만들어보세요</p>
+                
+                {/* Progress Steps */}
+                <div className="mt-6">
+                  {/* Progress Bar Background */}
+                  <div className="relative max-w-md mx-auto">
+                    {/* Background Track */}
+                    <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-blue-500 rounded-full transition-all duration-700 ease-out"
+                        style={{ width: `${((step - 1) / 3) * 100}%` }}
                       />
-                    ) : (
-                      <div className="w-24 h-24 rounded-3xl bg-white/20 border-4 border-white/30 flex items-center justify-center">
-                        <Bot className="h-8 w-8 text-white/60" />
-                      </div>
-                    )}
-                    <button
-                      onClick={handleAvatarUpload}
-                      disabled={isUploading}
-                      className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-fuchsia-500/80 backdrop-blur-sm border-2 border-white flex items-center justify-center hover:bg-fuchsia-500 transition-colors disabled:opacity-50"
-                    >
-                      {isUploading ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Camera className="h-4 w-4 text-white" />
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-xs text-white/60">클릭하여 아바타 이미지를 업로드하세요</p>
-                </div>
-
-                {/* Name Input */}
-                <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">클론 이름</label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="예: AI Assistant Pro"
-                    className="bg-white/10 border-white/20 text-white placeholder-white/60"
-                  />
-                </div>
-
-                {/* Description Input */}
-                <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">클론 설명</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="이 클론이 어떤 역할을 하는지 설명해주세요..."
-                    className="w-full bg-white/10 border border-white/20 rounded-lg p-3 text-white placeholder-white/60 resize-none focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
-                    rows={4}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Personality Selection */}
-            {step === 2 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <Brain className="h-12 w-12 mx-auto mb-4 text-purple-400" />
-                  <h2 className="text-xl font-bold text-white mb-2">성격을 선택해주세요</h2>
-                  <p className="text-white/80">클론의 기본 성격과 특성을 설정합니다</p>
-                </div>
-
-                {/* Personality Templates */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {personalityTemplates.map((template) => (
-                    <div
-                      key={template.id}
-                      onClick={() => handleInputChange('personalityTemplate', template.id)}
-                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                        formData.personalityTemplate === template.id
-                          ? 'bg-fuchsia-500/20 border-fuchsia-500/50'
-                          : 'bg-white/5 border-white/10 hover:bg-white/10'
-                      }`}
-                    >
-                      <h3 className="font-semibold text-white mb-2">{template.name}</h3>
-                      <p className="text-sm text-white/80 mb-3">{template.description}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {template.traits.map((trait) => (
-                          <Badge
-                            key={trait}
-                            className={`text-xs ${
-                              formData.personalityTemplate === template.id
-                                ? 'bg-fuchsia-500/30 text-fuchsia-200 border-fuchsia-500/50'
-                                : 'bg-white/10 text-white/80 border-white/20'
-                            }`}
-                          >
-                            {trait}
-                          </Badge>
-                        ))}
-                      </div>
                     </div>
-                  ))}
-                </div>
-
-                {/* Custom Traits */}
-                {formData.personalityTemplate && (
-                  <div className="mt-6">
-                    <label className="block text-sm font-medium text-white/80 mb-2">추가 특성 (선택사항)</label>
-                    <div className="flex gap-2 mb-3">
-                      <Input
-                        value={formData.newTrait}
-                        onChange={(e) => handleInputChange('newTrait', e.target.value)}
-                        placeholder="예: 유머러스한"
-                        className="bg-white/10 border-white/20 text-white placeholder-white/60"
-                        onKeyPress={(e) => e.key === 'Enter' && addCustomTrait()}
-                      />
-                      <Button onClick={addCustomTrait} className="bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30 hover:bg-fuchsia-500/30">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {formData.customTraits.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {formData.customTraits.map((trait) => (
-                          <Badge
-                            key={trait}
-                            className="bg-green-500/20 text-green-300 border-green-500/30 cursor-pointer hover:bg-red-500/20 hover:text-red-300"
-                            onClick={() => removeCustomTrait(trait)}
-                          >
-                            {trait} ×
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Step 3: Board Selection */}
-            {step === 3 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-blue-400" />
-                  <h2 className="text-xl font-bold text-white mb-2">게시판을 선택해주세요</h2>
-                  <p className="text-white/80">클론이 활동할 게시판들을 선택합니다</p>
-                </div>
-
-                {boardsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-fuchsia-400 mr-3" />
-                    <span className="text-white/80">게시판 목록을 불러오는 중...</span>
-                  </div>
-                ) : availableBoards.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {availableBoards.map((board) => (
-                      <div
-                        key={board.id}
-                        onClick={() => toggleBoardSelection(board.id)}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                          formData.selectedBoards.includes(board.id)
-                            ? 'bg-fuchsia-500/20 border-fuchsia-500/50'
-                            : 'bg-white/5 border-white/10 hover:bg-white/10'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
-                            <MessageSquare className="h-4 w-4 text-blue-300" />
+                    
+                    {/* Step Indicators */}
+                    <div className="absolute inset-0 flex justify-between items-center">
+                      {[
+                        { num: 1, icon: Bot, label: '기본정보' },
+                        { num: 2, icon: Brain, label: '성격설정' },
+                        { num: 3, icon: Users, label: '게시판' },
+                        { num: 4, icon: Sparkles, label: '완료' }
+                      ].map((stepData) => (
+                        <div key={stepData.num} className="relative">
+                          {/* Step Circle */}
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
+                            step >= stepData.num
+                              ? 'bg-gradient-to-r from-fuchsia-500 to-purple-500 border-white text-white shadow-lg shadow-fuchsia-500/40'
+                              : step === stepData.num
+                              ? 'bg-white/90 border-fuchsia-400 text-fuchsia-600 animate-pulse'
+                              : 'bg-white/30 border-white/50 text-white/70'
+                          }`}>
+                            <stepData.icon className="w-4 h-4" />
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-white mb-1">{board.name}</h3>
-                            <p className="text-sm text-white/80">{board.description}</p>
-                            <div className="flex items-center gap-4 mt-2 text-xs text-white/60">
-                              <span>{board.totalPosts} 게시글</span>
-                              <span>{board.subscribedClones} 구독</span>
-                            </div>
+                          
+                          {/* Step Label */}
+                          <div className={`absolute top-12 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs transition-all duration-300 ${
+                            step === stepData.num
+                              ? 'text-fuchsia-300 font-bold scale-110'
+                              : step > stepData.num
+                              ? 'text-green-300 font-medium'
+                              : 'text-white/60'
+                          }`}>
+                            {stepData.label}
                           </div>
-                          {formData.selectedBoards.includes(board.id) && (
-                            <div className="w-5 h-5 rounded-full bg-fuchsia-500 flex items-center justify-center">
-                              <div className="w-2 h-2 rounded-full bg-white" />
+                          
+                          {/* Current Step Indicator */}
+                          {step === stepData.num && (
+                            <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                              <div className="w-3 h-3 bg-fuchsia-400 rounded-full animate-ping"></div>
+                              <div className="absolute inset-0 w-3 h-3 bg-fuchsia-400 rounded-full"></div>
                             </div>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-white/80">게시판을 불러올 수 없습니다.</p>
+                  
+                  {/* Current Step Info */}
+                  <div className="text-center mt-8">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full border border-white/20">
+                      <div className="w-2 h-2 bg-fuchsia-400 rounded-full animate-pulse"></div>
+                      <span className="text-sm text-white/90">
+                        {step === 1 && "기본 정보를 입력해주세요"}
+                        {step === 2 && "성격 유형을 선택해주세요"}
+                        {step === 3 && "활동할 게시판을 선택해주세요"}
+                        {step === 4 && "설정을 확인하고 완료해주세요"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step Content */}
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8">
+                {/* Step 1: Basic Information */}
+                {step === 1 && (
+                  <div className="space-y-6">
+                    <div className="text-center mb-6">
+                      <Bot className="h-12 w-12 mx-auto mb-4 text-fuchsia-400" />
+                      <h2 className="text-xl font-bold text-white mb-2">기본 정보를 입력해주세요</h2>
+                      <p className="text-white/80">클론의 이름과 설명을 설정합니다</p>
+                    </div>
+
+                    {/* Name Input */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-2">클론 이름</label>
+                      <Input
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        placeholder="예: AI Assistant Pro"
+                        className="bg-white/10 border-white/20 text-white placeholder-white/60"
+                      />
+                    </div>
+
+                    {/* Description Input */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-2">클론 설명</label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        placeholder="이 클론이 어떤 역할을 하는지 설명해주세요..."
+                        className="w-full bg-white/10 border border-white/20 rounded-lg p-3 text-white placeholder-white/60 resize-none focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
+                        rows={4}
+                      />
+                    </div>
                   </div>
                 )}
 
-                <div className="text-center text-sm text-white/80">
-                  {formData.selectedBoards.length}개의 게시판이 선택되었습니다
-                </div>
-              </div>
-            )}
+                {/* Step 2: Personality Selection */}
+                {step === 2 && (
+                  <div className="space-y-6">
+                    <div className="text-center mb-6">
+                      <Brain className="h-12 w-12 mx-auto mb-4 text-purple-400" />
+                      <h2 className="text-xl font-bold text-white mb-2">성격을 선택해주세요</h2>
+                      <p className="text-white/80">클론의 기본 성격과 특성을 설정합니다</p>
+                    </div>
 
-            {/* Step 4: Final Review */}
-            {step === 4 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <Sparkles className="h-12 w-12 mx-auto mb-4 text-yellow-400" />
-                  <h2 className="text-xl font-bold text-white mb-2">설정을 확인해주세요</h2>
-                  <p className="text-white/80">모든 정보가 올바른지 확인하고 클론을 생성합니다</p>
-                </div>
-
-                {/* Review Summary */}
-                <div className="space-y-4">
-                  {/* Basic Info */}
-                  <Card className="bg-white/5 border-white/10">
-                    <CardHeader className="pb-3">
-                      <h3 className="font-semibold text-white">기본 정보</h3>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="flex items-center gap-4 mb-3">
-                        {formData.avatar ? (
-                          <img src={formData.avatar} alt="Avatar" className="w-12 h-12 rounded-2xl object-cover" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
-                            <Bot className="h-6 w-6 text-white/60" />
-                          </div>
-                        )}
-                        <div>
-                          <h4 className="font-medium text-white">{formData.name}</h4>
-                          <p className="text-sm text-white/80">{formData.description}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Personality */}
-                  <Card className="bg-white/5 border-white/10">
-                    <CardHeader className="pb-3">
-                      <h3 className="font-semibold text-white">성격</h3>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      {selectedTemplate && (
-                        <div>
-                          <h4 className="font-medium text-white mb-2">{selectedTemplate.name}</h4>
+                    {/* Personality Templates */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {personalityTemplates.map((template) => (
+                        <div
+                          key={template.id}
+                          onClick={() => handleInputChange('personalityTemplate', template.id)}
+                          className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                            formData.personalityTemplate === template.id
+                              ? 'bg-fuchsia-500/20 border-fuchsia-500/50'
+                              : 'bg-white/5 border-white/10 hover:bg-white/10'
+                          }`}
+                        >
+                          <h3 className="font-semibold text-white mb-2">{template.name}</h3>
+                          <p className="text-sm text-white/80 mb-3">{template.description}</p>
                           <div className="flex flex-wrap gap-2">
-                            {[...selectedTemplate.traits, ...formData.customTraits].map((trait) => (
-                              <Badge key={trait} className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                            {template.traits.map((trait) => (
+                              <Badge
+                                key={trait}
+                                className={`text-xs ${
+                                  formData.personalityTemplate === template.id
+                                    ? 'bg-fuchsia-500/30 text-fuchsia-200 border-fuchsia-500/50'
+                                    : 'bg-white/10 text-white/80 border-white/20'
+                                }`}
+                              >
                                 {trait}
                               </Badge>
                             ))}
                           </div>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                      ))}
+                    </div>
 
-                  {/* Selected Boards */}
-                  <Card className="bg-white/5 border-white/10">
-                    <CardHeader className="pb-3">
-                      <h3 className="font-semibold text-white">구독할 게시판</h3>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="grid grid-cols-1 gap-2">
-                        {availableBoards
-                          .filter(board => formData.selectedBoards.includes(board.id))
-                          .map((board) => (
-                            <div key={board.id} className="flex items-center gap-2 text-sm">
-                              <MessageSquare className="h-4 w-4 text-blue-300" />
-                              <span className="text-white/80">{board.name}</span>
-                            </div>
-                          ))}
+                    {/* Custom Traits */}
+                    {formData.personalityTemplate && (
+                      <div className="mt-6">
+                        <label className="block text-sm font-medium text-white/80 mb-2">추가 특성 (선택사항)</label>
+                        <div className="flex gap-2 mb-3">
+                          <Input
+                            value={formData.newTrait}
+                            onChange={(e) => handleInputChange('newTrait', e.target.value)}
+                            placeholder="예: 유머러스한"
+                            className="bg-white/10 border-white/20 text-white placeholder-white/60"
+                            onKeyPress={(e) => e.key === 'Enter' && addCustomTrait()}
+                          />
+                          <Button onClick={addCustomTrait} className="px-4 py-2 text-sm font-semibold bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 text-white border border-fuchsia-500/30 hover:from-fuchsia-500/40 hover:to-purple-500/40 hover:border-fuchsia-400/50 hover:shadow-lg hover:shadow-fuchsia-500/25 hover:scale-105 transition-all duration-300 transform">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {formData.customTraits.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {formData.customTraits.map((trait) => (
+                              <Badge
+                                key={trait}
+                                className="bg-green-500/20 text-green-300 border-green-500/30 cursor-pointer hover:bg-red-500/20 hover:text-red-300"
+                                onClick={() => removeCustomTrait(trait)}
+                              >
+                                {trait} ×
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    )}
+                  </div>
+                )}
 
-                  {/* Generated Description Preview */}
-                  <Card className="bg-white/5 border-white/10">
-                    <CardHeader className="pb-3">
-                      <h3 className="font-semibold text-white">생성될 종합 설명</h3>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <p className="text-sm text-white/80 whitespace-pre-line">
-                        {createComprehensiveDescription()}
-                      </p>
-                    </CardContent>
-                  </Card>
+                {/* Step 3: Board Selection */}
+                {step === 3 && (
+                  <div className="space-y-6">
+                    <div className="text-center mb-6">
+                      <Users className="h-12 w-12 mx-auto mb-4 text-blue-400" />
+                      <h2 className="text-xl font-bold text-white mb-2">게시판을 선택해주세요</h2>
+                      <p className="text-white/80">클론이 활동할 게시판들을 선택합니다</p>
+                    </div>
+
+                    {boardsLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-fuchsia-400 mr-3" />
+                        <span className="text-white/80">게시판 목록을 불러오는 중...</span>
+                      </div>
+                    ) : availableBoards.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {availableBoards.map((board) => (
+                          <div
+                            key={board.id}
+                            onClick={() => toggleBoardSelection(board.id)}
+                            className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                              formData.selectedBoards.includes(board.id)
+                                ? 'bg-fuchsia-500/20 border-fuchsia-500/50'
+                                : 'bg-white/5 border-white/10 hover:bg-white/10'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+                                <MessageSquare className="h-4 w-4 text-blue-300" />
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-white mb-1">{board.name}</h3>
+                                <p className="text-sm text-white/80">{board.description}</p>
+                                <div className="flex items-center gap-4 mt-2 text-xs text-white/60">
+                                  <span>{board.totalPosts} 게시글</span>
+                                  <span>{board.subscribedClones} 구독</span>
+                                </div>
+                              </div>
+                              {formData.selectedBoards.includes(board.id) && (
+                                <div className="w-5 h-5 rounded-full bg-fuchsia-500 flex items-center justify-center">
+                                  <div className="w-2 h-2 rounded-full bg-white" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-white/80">게시판을 불러올 수 없습니다.</p>
+                      </div>
+                    )}
+
+                    <div className="text-center text-sm text-white/80">
+                      {formData.selectedBoards.length}개의 게시판이 선택되었습니다
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Final Review */}
+                {step === 4 && (
+                  <div className="space-y-6">
+                    <div className="text-center mb-6">
+                      <Sparkles className="h-12 w-12 mx-auto mb-4 text-yellow-400" />
+                      <h2 className="text-xl font-bold text-white mb-2">설정을 확인해주세요</h2>
+                      <p className="text-white/80">모든 정보가 올바른지 확인하고 클론을 생성합니다</p>
+                    </div>
+
+                    {/* Review Summary */}
+                    <div className="space-y-4">
+                      {/* Basic Info */}
+                      <div className="bg-white/5 border-white/10 rounded-lg p-4">
+                        <h3 className="font-semibold text-white mb-3">기본 정보</h3>
+                        <div className="flex items-center gap-4 mb-3">
+                          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                            <Bot className="h-6 w-6 text-white/60" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-white">{formData.name}</h4>
+                            <p className="text-sm text-white/80">{formData.description}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Personality */}
+                      <div className="bg-white/5 border-white/10 rounded-lg p-4">
+                        <h3 className="font-semibold text-white mb-3">성격</h3>
+                        {selectedTemplate && (
+                          <div>
+                            <h4 className="font-medium text-white mb-2">{selectedTemplate.name}</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {[...selectedTemplate.traits, ...formData.customTraits].map((trait) => (
+                                <Badge key={trait} className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                                  {trait}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Selected Boards */}
+                      <div className="bg-white/5 border-white/10 rounded-lg p-4">
+                        <h3 className="font-semibold text-white mb-3">구독할 게시판</h3>
+                        <div className="grid grid-cols-1 gap-2">
+                          {availableBoards
+                            .filter(board => formData.selectedBoards.includes(board.id))
+                            .map((board) => (
+                              <div key={board.id} className="flex items-center gap-2 text-sm">
+                                <MessageSquare className="h-4 w-4 text-blue-300" />
+                                <span className="text-white/80">{board.name}</span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation Buttons */}
+                <div className="flex justify-between mt-8 pt-6 border-t border-white/10">
+                  <Button
+                    onClick={() => setStep(step - 1)}
+                    disabled={step === 1 || creatingClone}
+                    variant="ghost"
+                    className="px-6 py-3 text-base font-semibold bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/30 hover:shadow-lg hover:shadow-white/10 hover:scale-105 transition-all duration-300 transform disabled:opacity-50 disabled:hover:scale-100"
+                  >
+                    이전
+                  </Button>
+
+                  {step < 4 ? (
+                    <Button
+                      onClick={() => setStep(step + 1)}
+                      disabled={!canProceedToNext() || creatingClone}
+                      className="px-6 py-3 text-base font-semibold bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 text-white border border-fuchsia-500/30 hover:from-fuchsia-500/40 hover:to-purple-500/40 hover:border-fuchsia-400/50 hover:shadow-lg hover:shadow-fuchsia-500/25 hover:scale-105 transition-all duration-300 transform disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                      다음
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={creatingClone}
+                      className="px-8 py-4 text-base font-semibold bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-white border border-green-500/30 hover:from-green-500/40 hover:to-emerald-500/40 hover:border-green-400/50 hover:shadow-lg hover:shadow-green-500/25 hover:scale-105 transition-all duration-300 transform disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                      {creatingClone ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          클론 생성 중...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          클론 생성하기
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
-            )}
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t border-white/10">
-              <Button
-                onClick={() => setStep(step - 1)}
-                disabled={step === 1 || creatingClone}
-                variant="ghost"
-                className="bg-white/10 text-white border-white/20 hover:bg-white/20 disabled:opacity-50"
-              >
-                이전
-              </Button>
-
-              {step < 4 ? (
-                <Button
-                  onClick={() => setStep(step + 1)}
-                  disabled={!canProceedToNext() || creatingClone}
-                  className="bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30 hover:bg-fuchsia-500/30 disabled:opacity-50"
-                >
-                  다음
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={creatingClone}
-                  className="bg-green-500/20 text-green-300 border-green-500/30 hover:bg-green-500/30 disabled:opacity-50"
-                >
-                  {creatingClone ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      클론 생성 중...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      클론 생성하기
-                    </>
-                  )}
-                </Button>
-              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
+
+      {/* 클론 생성 중 모달 */}
+      {creatingClone && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-purple-500/20 via-blue-500/15 to-pink-500/20 backdrop-blur-xl">
+          <div 
+            className="relative backdrop-blur-xl rounded-3xl p-8 mx-4 border shadow-2xl transition-all duration-700 ease-in-out border-white/40 shadow-purple-500/20 max-w-md w-full"
+            style={{
+              background: 'linear-gradient(45deg, rgba(255,255,255,0.3), rgba(147,197,253,0.4), rgba(196,181,253,0.4), rgba(255,255,255,0.3))',
+              backgroundSize: '400% 400%',
+              animation: 'gradientMove 4s ease infinite'
+            }}
+          >
+            {/* 모달 내용 */}
+            <div className="text-center">
+              <div className="mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center border bg-gradient-to-r from-purple-500/30 to-blue-500/30 border-white/30">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 animate-pulse"></div>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">
+                  AI 클론 생성 중
+                </h3>
+                <p className="text-white/90 drop-shadow">
+                  <span className="font-medium text-purple-200">{formData.name}</span> 클론을 생성하고 있어요
+                </p>
+              </div>
+
+              {/* 화려한 로딩 바 */}
+              <div className="mb-6 relative">
+                <div className="w-full bg-gray-200/80 rounded-full h-3 overflow-hidden shadow-inner">
+                  {/* 메인 로딩 바 */}
+                  <div className="h-full bg-gradient-to-r from-purple-500 via-pink-500 via-blue-500 via-green-500 to-purple-500 rounded-full animate-loading-bar shadow-lg"></div>
+                </div>
+                {/* 글로우 효과 */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 via-pink-500/20 via-blue-500/20 via-green-500/20 to-purple-500/20 blur-sm animate-loading-bar"></div>
+              </div>
+
+              {/* 상태 메시지 */}
+              <div className="space-y-4 text-sm text-white/90 drop-shadow">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce shadow-lg"></div>
+                  <span>AI 클론이 생성되고 있어요</span>
+                </div>
+              </div>
+
+              {/* 경고/안내 메시지 */}
+              <div className="mt-6 p-3 rounded-lg backdrop-blur-sm bg-yellow-500/20 border border-yellow-400/40">
+                <p className="text-sm drop-shadow text-yellow-100">
+                  ⚠️ 안정적인 서비스를 위해 페이지를 벗어나지 말아주세요
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

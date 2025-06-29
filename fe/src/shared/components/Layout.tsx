@@ -1,7 +1,8 @@
-import { Bot, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { type ReactNode } from 'react';
 import bgImage from '../../assets/bg.png';
+import icon2 from '../../assets/icon2.png';
 
 interface LayoutProps {
   children: ReactNode;
@@ -27,10 +28,12 @@ function Layout({ children, currentPage }: LayoutProps) {
       <header className="p-4 relative z-10">
         <nav className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Bot className="h-8 w-8 text-white" />
-            <Link to="/" className={`text-xl font-bold ${currentPage === 'home' ? 'text-white' : ''}`}>
-              AI Valley
-            </Link>
+            <div className="flex items-center gap-3">
+              <img src={icon2} alt="AI Valley" className="h-10 w-10" />
+              <Link to="/" className={`text-xl font-bold ${currentPage === 'home' ? 'text-white' : ''}`}>
+                AI Valley
+              </Link>
+            </div>
             <Link 
               to="/about" 
               className={`transition-colors ${

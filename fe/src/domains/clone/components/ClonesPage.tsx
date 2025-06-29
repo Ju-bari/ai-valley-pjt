@@ -7,6 +7,7 @@ import Layout from '../../../shared/components/Layout';
 import { useState, useEffect } from 'react';
 import { getMyClones, getCloneStatistics, getCloneBoards, getClonePosts } from '../services/cloneService';
 import { type CloneInfoResponse, type CloneStatisticsResponse, type BoardInfoResponse, type PostInfoResponse } from '../types';
+import CreateCloneModal from './CreateCloneModal';
 
 interface CloneWithStats extends CloneInfoResponse {
   statistics?: CloneStatisticsResponse;
@@ -19,6 +20,7 @@ function ClonesPage() {
   const [clones, setClones] = useState<CloneWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -74,6 +76,61 @@ function ClonesPage() {
 
     fetchClonesWithStats();
   }, []);
+
+  const handleCreateCloneSuccess = () => {
+    // Refresh the clones list after successful creation
+    const fetchClonesWithStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // First, get the list of clones
+        const clonesData = await getMyClones();
+        
+        // Then, fetch statistics, boards, and posts for each clone in parallel
+        const clonesWithStats = await Promise.all(
+          clonesData.map(async (clone) => {
+            try {
+              const [statisticsResult, boardsResult, postsResult] = await Promise.allSettled([
+                getCloneStatistics(clone.cloneId),
+                getCloneBoards(clone.cloneId),
+                getClonePosts(clone.cloneId)
+              ]);
+
+              const statistics = statisticsResult.status === 'fulfilled' ? statisticsResult.value : undefined;
+              const boards = boardsResult.status === 'fulfilled' ? boardsResult.value : [];
+              const posts = postsResult.status === 'fulfilled' ? postsResult.value : [];
+
+              return {
+                ...clone,
+                statistics,
+                boardCount: boards.length,
+                boards,
+                posts
+              };
+            } catch (err) {
+              // If individual clone stats fail, still return the clone with default values
+              return {
+                ...clone,
+                statistics: undefined,
+                boardCount: 0,
+                boards: [],
+                posts: []
+              };
+            }
+          })
+        );
+        
+        setClones(clonesWithStats);
+      } catch (err) {
+        setError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClonesWithStats();
+  };
 
   // Handle board click - navigate to first board or show boards list
   const handleBoardClick = (clone: CloneWithStats, e: React.MouseEvent) => {
@@ -154,7 +211,7 @@ function ClonesPage() {
               <p className="text-red-300 mb-4">{error}</p>
               <Button 
                 onClick={() => window.location.reload()} 
-                className="bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30"
+                className="px-6 py-3 text-base font-semibold bg-red-500/20 text-white border-red-500/30 hover:bg-red-500/40 hover:border-red-400/50 hover:shadow-lg hover:shadow-red-500/25 hover:scale-105 transition-all duration-300 transform"
               >
                 다시 시도
               </Button>
@@ -185,12 +242,13 @@ function ClonesPage() {
             </Badge>
           </div>
           
-          <Link to="/clones/create">
-            <Button className="bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 text-fuchsia-300 border border-fuchsia-500/30 hover:from-fuchsia-500/30 hover:to-purple-500/30 hover:border-fuchsia-500/50 transition-all duration-300">
-              <Bot className="h-4 w-4 mr-2" />
-              새 클론 생성
-            </Button>
-          </Link>
+          <Button 
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-6 py-3 text-base font-semibold bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 hover:text-blue-100 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105 transition-all duration-300 transform drop-shadow-lg"
+            style={{textShadow: '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(147, 51, 234, 0.4)'}}
+          >
+            새 클론 생성
+          </Button>
         </div>
 
         {/* Empty State */}
@@ -199,12 +257,13 @@ function ClonesPage() {
             <Bot className="h-16 w-16 text-white/60 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">아직 생성된 클론이 없습니다</h3>
             <p className="text-white/80 mb-6">첫 번째 AI 클론을 만들어보세요!</p>
-            <Link to="/clones/create">
-              <Button className="bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 text-fuchsia-300 border border-fuchsia-500/30 hover:from-fuchsia-500/30 hover:to-purple-500/30">
-                <Bot className="h-4 w-4 mr-2" />
-                클론 생성하기
-              </Button>
-            </Link>
+            <Button 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 hover:text-blue-100 hover:border-blue-400/50 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300 transform drop-shadow-lg"
+              style={{textShadow: '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(147, 51, 234, 0.4)'}}
+            >
+              클론 생성하기
+            </Button>
           </div>
         ) : (
           /* Clones Grid */
@@ -214,13 +273,13 @@ function ClonesPage() {
                 key={clone.cloneId} 
                 to={`/clones/${clone.cloneId}`}
               >
-                <Card className="bg-white/10 backdrop-blur-md border-2 border-white/20 hover:border-white/30 transition-all duration-300 hover:bg-white/15 group cursor-pointer">
-                  <CardHeader className="pb-3">
+                <Card className="bg-white/10 backdrop-blur-md border-2 border-white/20 hover:border-white/30 transition-all duration-300 hover:bg-white/15 group cursor-pointer h-[280px] flex flex-col">
+                  <CardHeader className="pb-1">
                     <div className="flex items-start gap-4">
                       {/* Avatar Placeholder */}
                       <div className="relative">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-purple-500/20 border-2 border-white/30 flex items-center justify-center">
-                          <Bot className="h-8 w-8 text-fuchsia-300" />
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500/30 to-purple-500/30 border-2 border-white/30 flex items-center justify-center">
+                          <Bot className="h-8 w-8 text-white" />
                         </div>
                         <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${
                           clone.isActive === 1 ? 'bg-green-500' : 'bg-gray-500'
@@ -243,46 +302,47 @@ function ClonesPage() {
                         </Badge>
                       </div>
                     </div>
-                  </CardHeader>
-                  
-                  <CardContent className="pt-0">
-                    {/* Description */}
-                    <p className="text-white/90 text-sm mb-4 leading-relaxed">
+                    
+                    {/* Description - moved to header for closer spacing */}
+                    <p className="text-white/90 text-base mt-3 leading-relaxed h-12 overflow-hidden">
                       {clone.description}
                     </p>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0 flex-1 flex flex-col justify-end">
                     
-                    {/* Stats Grid with real data */}
-                    <div className="grid grid-cols-3 gap-3">
+                    {/* Stats with labels */}
+                    <div className="flex items-center justify-between text-sm mt-4 pt-4 border-t border-white/10">
                       <div 
-                        className="bg-white/5 rounded-lg p-3 text-center border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
+                        className="flex items-center gap-2 hover:bg-white/5 rounded-lg px-3 py-2 transition-all duration-200 cursor-pointer group"
                         onClick={(e) => handleBoardClick(clone, e)}
                         title="참여 게시판 보기"
                       >
-                        <Users className="h-4 w-4 mx-auto mb-1 text-blue-400" />
-                        <div className="text-lg font-bold text-white">
-                          {clone.boardCount ?? 0}
+                        <div className="flex items-center gap-1.5">
+                          <Users className="h-4 w-4 text-blue-400 group-hover:text-blue-300" />
+                          <span className="font-semibold text-white group-hover:text-blue-300 text-base">{clone.boardCount ?? 0}</span>
                         </div>
-                        <div className="text-xs text-white/80">참여 게시판</div>
+                        <span className="text-white/70 group-hover:text-blue-200 font-medium">게시판</span>
                       </div>
                       
                       <div 
-                        className="bg-white/5 rounded-lg p-3 text-center border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
+                        className="flex items-center gap-2 hover:bg-white/5 rounded-lg px-3 py-2 transition-all duration-200 cursor-pointer group"
                         onClick={(e) => handlePostClick(clone, e)}
                         title="작성 게시글 보기"
                       >
-                        <FileText className="h-4 w-4 mx-auto mb-1 text-purple-400" />
-                        <div className="text-lg font-bold text-white">
-                          {clone.statistics?.postCount ?? 0}
+                        <div className="flex items-center gap-1.5">
+                          <FileText className="h-4 w-4 text-purple-400 group-hover:text-purple-300" />
+                          <span className="font-semibold text-white group-hover:text-purple-300 text-base">{clone.statistics?.postCount ?? 0}</span>
                         </div>
-                        <div className="text-xs text-white/80">작성 게시글</div>
+                        <span className="text-white/70 group-hover:text-purple-200 font-medium">게시글</span>
                       </div>
                       
-                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
-                        <MessageSquare className="h-4 w-4 mx-auto mb-1 text-green-400" />
-                        <div className="text-lg font-bold text-white">
-                          {clone.statistics?.replyCount ?? 0}
+                      <div className="flex items-center gap-2 px-3 py-2">
+                        <div className="flex items-center gap-1.5">
+                          <MessageSquare className="h-4 w-4 text-green-400" />
+                          <span className="font-semibold text-white text-base">{clone.statistics?.replyCount ?? 0}</span>
                         </div>
-                        <div className="text-xs text-white/80">작성 댓글</div>
+                        <span className="text-white/70 font-medium">댓글</span>
                       </div>
                     </div>
                   </CardContent>
@@ -291,6 +351,13 @@ function ClonesPage() {
             ))}
           </div>
         )}
+
+        {/* Create Clone Modal */}
+        <CreateCloneModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={handleCreateCloneSuccess}
+        />
       </div>
     </Layout>
   );

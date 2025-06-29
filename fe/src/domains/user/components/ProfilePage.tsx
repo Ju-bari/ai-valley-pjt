@@ -1,4 +1,4 @@
-import { Bot, ArrowLeft, Edit, Save, X, User, Mail, Calendar, Camera } from 'lucide-react';
+import { Bot, ArrowLeft, Edit, Save, X, User, Mail, Calendar, Camera, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '../../../shared/components/ui/card';
 import { Badge } from '../../../shared/components/ui/badge';
@@ -226,7 +226,7 @@ function ProfilePage() {
 
   return (
     <Layout currentPage="profile">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Back Button */}
         <div className="mb-6">
           <Link 
@@ -238,16 +238,14 @@ function ProfilePage() {
           </Link>
         </div>
 
-        {/* Main Content Container */}
-        <div className="max-w-6xl mx-auto">
-          {/* Success Message */}
-          {updateSuccess && (
-            <div className="mb-6 p-4 bg-green-500/20 border border-green-500/30 rounded-lg">
-              <p className="text-green-300 text-center">프로필이 성공적으로 업데이트되었습니다! ✨</p>
-            </div>
-          )}
+        {/* Success Message */}
+        {updateSuccess && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-lg backdrop-blur-sm">
+            <p className="text-green-300 text-center">프로필이 성공적으로 업데이트되었습니다! ✨</p>
+          </div>
+        )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Profile Info */}
             <div className="lg:col-span-1 space-y-6">
               {/* Profile Card */}
@@ -258,16 +256,16 @@ function ProfilePage() {
                       <img
                         src={userData.avatar}
                         alt={userData.name}
-                        className="w-32 h-32 rounded-3xl object-cover border-4 border-white mx-auto"
+                        className="w-24 h-24 rounded-3xl object-cover border-4 border-white/30 mx-auto"
                       />
                     ) : (
-                      <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-fuchsia-500/20 to-purple-500/20 border-4 border-white mx-auto flex items-center justify-center">
-                        <User className="h-16 w-16 text-fuchsia-300" />
+                      <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-fuchsia-500/20 to-purple-500/20 border-4 border-white/30 mx-auto flex items-center justify-center">
+                        <User className="h-12 w-12 text-fuchsia-300" />
                       </div>
                     )}
                     {isEditing && (
-                      <button className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full bg-fuchsia-500 border-2 border-white flex items-center justify-center hover:bg-fuchsia-600 transition-colors shadow-lg">
-                        <Camera className="h-5 w-5 text-white" />
+                      <button className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-fuchsia-500 border-2 border-white flex items-center justify-center hover:bg-fuchsia-600 transition-colors shadow-lg">
+                        <Camera className="h-4 w-4 text-white" />
                       </button>
                     )}
                   </div>
@@ -278,7 +276,7 @@ function ProfilePage() {
                         <Input
                           value={editedName}
                           onChange={(e) => handleNicknameChange(e.target.value)}
-                          className={`text-center text-2xl font-bold bg-white/10 border-white/20 ${
+                          className={`text-center text-xl font-bold bg-white/10 border-white/20 ${
                             validationError ? 'border-red-500/50 focus:ring-red-400' : ''
                           }`}
                           placeholder="닉네임을 입력하세요"
@@ -288,36 +286,34 @@ function ProfilePage() {
                         {validationError && (
                           <p className="text-red-400 text-sm text-center">{validationError}</p>
                         )}
-                        <p className="text-gray-500 text-xs text-center">
+                        <p className="text-white/60 text-xs text-center">
                           {editedName.length}/10자
                         </p>
                       </div>
                     ) : (
-                      <h2 className="text-2xl font-bold text-white">{userData.name}</h2>
+                      <h2 className="text-xl font-bold text-white">{userData.name}</h2>
                     )}
                     
-                    <p className="text-gray-400 text-sm mt-1">{userData.email}</p>
+                    <p className="text-white/80 text-sm mt-2">{userData.email}</p>
                   </div>
                 </CardHeader>
                 
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="text-sm text-gray-400">
-                      <div className="flex items-center gap-2 justify-center">
-                        <Calendar className="h-4 w-4" />
-                        <span>가입일: {formatJoinDate(userData.joinDate)}</span>
-                      </div>
+                    <div className="flex items-center gap-2 text-sm text-white/80">
+                      <Calendar className="h-4 w-4" />
+                      <span>가입일: {formatJoinDate(userData.joinDate)}</span>
                     </div>
                   </div>
                   
                   {/* Edit Controls */}
-                  <div className="flex gap-2 mt-6">
+                  <div className="mt-6">
                     {isEditing ? (
-                      <>
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Button 
                           onClick={handleSave} 
                           disabled={!!validationError || isUpdating || editedName.trim() === userData.name}
-                          className="flex-1 bg-green-500/20 text-green-300 border-green-500/30 hover:bg-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 border border-green-500/30 hover:from-green-500/30 hover:to-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isUpdating ? (
                             <>
@@ -334,17 +330,16 @@ function ProfilePage() {
                         <Button 
                           onClick={handleCancel} 
                           disabled={isUpdating}
-                          variant="ghost" 
-                          className="flex-1 bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30 disabled:opacity-50"
+                          className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20 disabled:opacity-50"
                         >
                           <X className="h-4 w-4 mr-2" />
                           취소
                         </Button>
-                      </>
+                      </div>
                     ) : (
                       <Button 
                         onClick={handleEditStart} 
-                        className="w-full bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30 hover:bg-fuchsia-500/30"
+                        className="w-full bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 text-fuchsia-300 border border-fuchsia-500/30 hover:from-fuchsia-500/30 hover:to-purple-500/30"
                       >
                         <Edit className="h-4 w-4 mr-2" />
                         프로필 수정
@@ -363,38 +358,26 @@ function ProfilePage() {
                   <h3 className="text-lg font-bold text-white">활동 통계</h3>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4 text-center">
                     <Link 
                       to="/clones"
-                      className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group"
+                      className="p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-200 cursor-pointer group"
                     >
-                      <div className="flex items-center gap-3">
-                        <Bot className="h-5 w-5 text-blue-400 group-hover:text-blue-300 transition-colors" />
-                        <span className="text-white font-medium group-hover:text-blue-300 transition-colors">AI 클론</span>
-                      </div>
-                      <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 group-hover:bg-blue-500/30 transition-colors">
-                        {userData.totalClones}개
-                      </Badge>
+                      <Bot className="h-6 w-6 text-blue-400 mx-auto mb-2 group-hover:text-blue-300 transition-colors" />
+                      <div className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors">{userData.totalClones}</div>
+                      <div className="text-xs text-white/70">AI 클론</div>
                     </Link>
                     
-                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
-                      <div className="flex items-center gap-3">
-                        <User className="h-5 w-5 text-purple-400" />
-                        <span className="text-white font-medium">작성 게시글</span>
-                      </div>
-                      <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                        {userData.totalPosts}개
-                      </Badge>
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                      <FileText className="h-6 w-6 text-purple-400 mx-auto mb-2" />
+                      <div className="text-xl font-bold text-white">{userData.totalPosts}</div>
+                      <div className="text-xs text-white/70">게시글</div>
                     </div>
                     
-                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
-                      <div className="flex items-center gap-3">
-                        <Mail className="h-5 w-5 text-green-400" />
-                        <span className="text-white font-medium">작성 댓글</span>
-                      </div>
-                      <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                        {userData.totalComments}개
-                      </Badge>
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                      <Mail className="h-6 w-6 text-green-400 mx-auto mb-2" />
+                      <div className="text-xl font-bold text-white">{userData.totalComments}</div>
+                      <div className="text-xs text-white/70">댓글</div>
                     </div>
                   </div>
                 </CardContent>
@@ -412,7 +395,7 @@ function ProfilePage() {
                         {activity.type === 'post' && (
                           <div>
                             <div className="flex items-center gap-2 mb-2">
-                              <User className="h-4 w-4 text-purple-400" />
+                              <FileText className="h-4 w-4 text-purple-400" />
                               <span className="text-sm font-medium text-purple-300">새 게시글 작성</span>
                               <span className="text-xs text-gray-500">•</span>
                               <span className="text-xs text-gray-400">{formatDate(activity.createdAt)}</span>
@@ -454,9 +437,8 @@ function ProfilePage() {
             </div>
           </div>
         </div>
-      </div>
-    </Layout>
-  );
-}
+      </Layout>
+    );
+  }
 
 export default ProfilePage; 

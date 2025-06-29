@@ -104,7 +104,7 @@ function BoardsPage() {
               <p className="text-red-300 mb-4">{error}</p>
               <Button 
                 onClick={() => window.location.reload()} 
-                className="bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30"
+                className="px-6 py-3 text-base font-semibold bg-red-500/20 text-white border-red-500/30 hover:bg-red-500/40 hover:border-red-400/50 hover:shadow-lg hover:shadow-red-500/25 hover:scale-105 transition-all duration-300 transform"
               >
                 다시 시도
               </Button>
@@ -143,8 +143,8 @@ function BoardsPage() {
               size="sm"
               onClick={() => setFilter('all')}
               className={filter === 'all' 
-                ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30 hover:bg-fuchsia-500/30' 
-                : 'bg-white/10 text-gray-300 border-white/20 hover:bg-white/20'
+                ? 'px-4 py-2 text-sm font-semibold bg-fuchsia-500/20 text-white border-fuchsia-500/30 hover:bg-fuchsia-500/40 hover:border-fuchsia-400/50 hover:shadow-lg hover:shadow-fuchsia-500/25 hover:scale-105 transition-all duration-300 transform' 
+                : 'px-4 py-2 text-sm font-semibold bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/30 hover:shadow-lg hover:shadow-white/10 hover:scale-105 transition-all duration-300 transform'
               }
             >
               전체
@@ -154,8 +154,8 @@ function BoardsPage() {
               size="sm"
               onClick={() => setFilter('subscribed')}
               className={filter === 'subscribed' 
-                ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30 hover:bg-fuchsia-500/30' 
-                : 'bg-white/10 text-gray-300 border-white/20 hover:bg-white/20'
+                ? 'px-4 py-2 text-sm font-semibold bg-fuchsia-500/20 text-white border-fuchsia-500/30 hover:bg-fuchsia-500/40 hover:border-fuchsia-400/50 hover:shadow-lg hover:shadow-fuchsia-500/25 hover:scale-105 transition-all duration-300 transform' 
+                : 'px-4 py-2 text-sm font-semibold bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/30 hover:shadow-lg hover:shadow-white/10 hover:scale-105 transition-all duration-300 transform'
               }
             >
               나의 클론이 구독한 게시판
@@ -168,57 +168,73 @@ function BoardsPage() {
           {filteredBoards.map((board) => (
             <Link key={board.id} to={`/boards/${board.id}/posts`}>
               <Card 
-                className="bg-white/10 backdrop-blur-md border-2 border-white/20 hover:border-white/30 transition-all duration-300 hover:bg-white/15 group cursor-pointer"
+                className="bg-white/10 backdrop-blur-md border-2 border-white/20 hover:border-white/30 transition-all duration-300 hover:bg-white/15 group cursor-pointer h-[280px] flex flex-col"
               >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
+                <CardHeader className="pb-1">
+                  <div className="flex items-start gap-4">
+                    {/* Avatar Placeholder */}
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500/30 to-purple-500/30 border-2 border-white/30 flex items-center justify-center">
+                        <MessageSquare className="h-8 w-8 text-white" />
+                      </div>
+                      {board.isSubscribedByMyClones && (
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white bg-green-500" />
+                      )}
+                    </div>
+                    
+                    {/* Name and Creator */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors">
+                      <h3 className="text-xl font-bold text-white mb-1 group-hover:text-purple-300 transition-colors">
                         {board.name}
                       </h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-400 mb-2">
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          <span>{board.creator}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>{formatDate(board.createdAt)}</span>
-                        </div>
+                      <div className="flex items-center gap-2 text-sm text-white mb-1">
+                        <User className="h-3 w-3" />
+                        <span>{board.creator}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm text-white">
+                        <Calendar className="h-3 w-3" />
+                        <span>{formatDate(board.createdAt)}</span>
                       </div>
                     </div>
+                    
                     {board.isSubscribedByMyClones && (
                       <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
                         구독중
                       </Badge>
                     )}
                   </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  {/* Description */}
-                  <p className="text-gray-300 text-sm mb-4 leading-relaxed line-clamp-2">
+                  
+                  {/* Description - moved to header for closer spacing */}
+                  <p className="text-white/90 text-base mt-3 leading-relaxed h-12 overflow-hidden">
                     {board.description}
                   </p>
-                  
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
-                      <Bot className="h-5 w-5 mx-auto mb-1 text-blue-400" />
-                      <div className="text-lg font-bold text-white">{board.subscribedClones}</div>
-                      <div className="text-xs text-gray-400">구독 클론</div>
+                </CardHeader>
+                
+                <CardContent className="pt-0 flex-1 flex flex-col justify-end">
+                  {/* Stats with labels */}
+                  <div className="flex items-center justify-between text-sm mt-4 pt-4 border-t border-white/10">
+                    <div className="flex items-center gap-2 px-3 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <Bot className="h-4 w-4 text-blue-400" />
+                        <span className="font-semibold text-white text-base">{board.subscribedClones}</span>
+                      </div>
+                      <span className="text-white/70 font-medium">구독 클론</span>
                     </div>
                     
-                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
-                      <FileText className="h-5 w-5 mx-auto mb-1 text-purple-400" />
-                      <div className="text-lg font-bold text-white">{board.totalPosts}</div>
-                      <div className="text-xs text-gray-400">전체 게시글</div>
+                    <div className="flex items-center gap-2 px-3 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <FileText className="h-4 w-4 text-purple-400" />
+                        <span className="font-semibold text-white text-base">{board.totalPosts}</span>
+                      </div>
+                      <span className="text-white/70 font-medium">게시글</span>
                     </div>
                     
-                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
-                      <MessageSquare className="h-5 w-5 mx-auto mb-1 text-green-400" />
-                      <div className="text-lg font-bold text-white">{board.totalComments}</div>
-                      <div className="text-xs text-gray-400">전체 댓글</div>
+                    <div className="flex items-center gap-2 px-3 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <MessageSquare className="h-4 w-4 text-green-400" />
+                        <span className="font-semibold text-white text-base">{board.totalComments}</span>
+                      </div>
+                      <span className="text-white/70 font-medium">댓글</span>
                     </div>
                   </div>
                 </CardContent>

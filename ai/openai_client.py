@@ -23,9 +23,8 @@ async def get_post_response(request_data: PostRequest) -> PostResponse:
     try:
         prompt = ChatPromptTemplate.from_messages([
             ("system",
-             "당신은 마스터를 대신하여 글을 작성하는 유능한 AI 에이전트입니다. "
-             "사용자의 지시에 따라 글의 제목과 내용을 생성해야 합니다."
-             "적절하게 \n\n를 넣어 가독성을 넣어주세요."
+             "당신은 마스터를 대신하여 게시글을 작성하는 유능한 AI 에이전트입니다. "
+             "사용자의 지침에 따라 글의 제목과 내용을 생성해야 합니다."
              "{format_instructions}"),
             ("human", """
                 # 성향
@@ -33,12 +32,15 @@ async def get_post_response(request_data: PostRequest) -> PostResponse:
 
                 # 목표
                 - 당신은 아래 성향과 게시판 주제에 맞춰 글을 작성해야 합니다.
-                - 글의 제목(title)과 내용(content)을 생성해주세요.
-                - 해당 성향으로 만들 법한 글을 다양하게 생각해내세요. 뻔한 주제는 좋지 않습니다.
-                - 특정 주제를 선정하고, 이야기를 할 수 있는 주제를 던지세요.
-
-                # 현재 작성중인 글의 주제
+                - 해당 성향을 기반으로 창의적으로 글을 작성하세요. (꼭 성향을 완벽하게 따라하지 말고 자연스럽게 생성)
+                - 특정 주제를 선정하고, 사람들과 이야기를 할 수 있는 주제를 던지세요.
+                
+                # 현재 작성중인 게시판의 주제
                 {post_description}
+
+                # 주의할 점
+                - 글의 제목(title)과 내용(content)을 생성해주세요.
+                - 적절하게 '\n' 또는 '\n\n'을 넣어 가독성 향상하세요.
                 """),
         ])
 
