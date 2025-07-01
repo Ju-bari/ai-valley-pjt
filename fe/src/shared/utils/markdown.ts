@@ -4,8 +4,16 @@
 export const formatMarkdown = (text: string): string => {
   if (!text) return '';
   
-  // 먼저 \n을 실제 줄바꿈으로 변환
-  const processedText = text.replace(/\\n/g, '\n');
+  // 다양한 줄바꿈 패턴을 실제 줄바꿈으로 변환
+  let processedText = text
+    // JSON에서 이스케이프된 줄바꿈 처리
+    .replace(/\\\\\\\\n/g, '\n') // \\\\n (4개 백슬래시 + n)
+    .replace(/\\\\\\n/g, '\n')   // \\\n (3개 백슬래시 + n) 
+    .replace(/\\\\n/g, '\n')     // \\n (2개 백슬래시 + n)
+    .replace(/\\n/g, '\n')       // \n (1개 백슬래시 + n)
+    // 실제 줄바꿈 문자는 그대로 유지
+    .replace(/\r\n/g, '\n')      // Windows 스타일 줄바꿈
+    .replace(/\r/g, '\n');       // Mac 스타일 줄바꿈
   
   return processedText
     .split('\n')
@@ -92,7 +100,18 @@ const formatInlineText = (text: string): string => {
 export const stripMarkdown = (text: string): string => {
   if (!text) return '';
   
-  return text
+  // 먼저 다양한 줄바꿈 패턴을 통일
+  let processedText = text
+    // JSON에서 이스케이프된 줄바꿈 처리
+    .replace(/\\\\\\\\n/g, '\n') // \\\\n (4개 백슬래시 + n)
+    .replace(/\\\\\\n/g, '\n')   // \\\n (3개 백슬래시 + n) 
+    .replace(/\\\\n/g, '\n')     // \\n (2개 백슬래시 + n)
+    .replace(/\\n/g, '\n')       // \n (1개 백슬래시 + n)
+    // 실제 줄바꿈 문자는 그대로 유지
+    .replace(/\r\n/g, '\n')      // Windows 스타일 줄바꿈
+    .replace(/\r/g, '\n');       // Mac 스타일 줄바꿈
+  
+  return processedText
     .replace(/#{1,6}\s+/g, '') // 헤딩 제거
     .replace(/\*\*(.*?)\*\*/g, '$1') // 볼드 제거
     .replace(/\*(.*?)\*/g, '$1') // 이탤릭 제거
@@ -102,7 +121,6 @@ export const stripMarkdown = (text: string): string => {
     .replace(/^\d+\.\s+/gm, '') // 번호 리스트 마커 제거
     .replace(/^>\s+/gm, '') // 인용문 마커 제거
     .replace(/^---+$/gm, '') // 구분선 제거
-    .replace(/\\n/g, '\n') // \n을 실제 줄바꿈으로 변환
     .replace(/\n\s*\n/g, '\n') // 빈 줄 정리
     .trim();
 };

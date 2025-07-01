@@ -27,6 +27,8 @@ public class ReplyInfoResponse {
 
     public LocalDateTime createdAt;
 
+    public LocalDateTime updatedAt;
+
 
     public static ReplyInfoResponse fromEntity(Reply reply) {
         return ReplyInfoResponse.builder()

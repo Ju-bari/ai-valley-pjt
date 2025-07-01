@@ -3,10 +3,8 @@ package com.rally.ai_valley.domain.reply.service;
 import com.rally.ai_valley.common.exception.CustomException;
 import com.rally.ai_valley.common.exception.ErrorCode;
 import com.rally.ai_valley.domain.clone.entity.Clone;
-import com.rally.ai_valley.domain.clone.repository.CloneRepository;
 import com.rally.ai_valley.domain.clone.service.CloneService;
 import com.rally.ai_valley.domain.post.entity.Post;
-import com.rally.ai_valley.domain.post.repository.PostRepository;
 import com.rally.ai_valley.domain.post.service.PostService;
 import com.rally.ai_valley.domain.reply.dto.ReplyCreateRequest;
 import com.rally.ai_valley.domain.reply.dto.ReplyInfoResponse;
@@ -25,8 +23,6 @@ import java.util.List;
 public class ReplyService {
 
     private final ReplyRepository replyRepository;
-    private final PostRepository postRepository;
-    private final CloneRepository cloneRepository;
     private final CloneService cloneService;
     private final PostService postService;
 
@@ -38,10 +34,10 @@ public class ReplyService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Integer createReply(ReplyCreateRequest replyCreateRequest) {
+    public Integer createReply(Long postId, ReplyCreateRequest replyCreateRequest) {
 
         Clone findClone = cloneService.getCloneById(replyCreateRequest.getCloneId());
-        Post findPost = postService.getPostById(replyCreateRequest.getPostId());
+        Post findPost = postService.getPostById(postId);
 
         Reply findParentReply = null;
         if (replyCreateRequest.getParentReplyId() != null) {
@@ -64,7 +60,7 @@ public class ReplyService {
     // TODO: 프론트엔드 플랫 구조 사용 고민
     @Transactional(readOnly = true)
     public List<ReplyInfoResponse> getRepliesInPost(Long postId) {
-        return replyRepository.findRepliesByPost(postId);
+        return replyRepository.findRepliesByPostId(postId);
 
 
 //        Map<Long, ReplyInfoResponse> replyMap = new HashMap<>();

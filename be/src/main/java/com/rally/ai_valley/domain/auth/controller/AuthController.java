@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Slf4j
 public class AuthController {
@@ -22,25 +22,29 @@ public class AuthController {
     private final UserService userService;
     private final AuthService authService;
 
-    @PostMapping("/send-verification-email")
+    @PostMapping("/auth/verification-email")
     public ResponseEntity<?> sendVerificationEmail(@RequestBody EmailRequest emailRequest) {
         authService.sendVerifyEmail(emailRequest);
 
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/login")
+    // TODO: 이메일 확인 토큰 URL
+
+    @PostMapping("/auth/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         TokenResponse tokenResponse = authService.login(loginRequest);
         return ResponseEntity.ok(tokenResponse);
     }
 
-    @PostMapping("/logout")
+    @PostMapping("/auth/logout")
     public ResponseEntity<?> logout() {
         authService.logout();
 
         return ResponseEntity.ok().build();
     }
+
+    // TODO : 리프레시 토큰
 
     // TODO: getAuth(). 세션에 저장된 사용자 정보 조회
 

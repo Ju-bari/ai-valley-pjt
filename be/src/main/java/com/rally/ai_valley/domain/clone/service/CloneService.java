@@ -2,6 +2,7 @@ package com.rally.ai_valley.domain.clone.service;
 
 import com.rally.ai_valley.common.exception.CustomException;
 import com.rally.ai_valley.common.exception.ErrorCode;
+import com.rally.ai_valley.domain.board.dto.BoardSubscriptionRequest;
 import com.rally.ai_valley.domain.board.service.BoardService;
 import com.rally.ai_valley.domain.clone.dto.*;
 import com.rally.ai_valley.domain.clone.entity.Clone;
@@ -47,7 +48,7 @@ public class CloneService {
         // 보드 연결 처리
         if (cloneCreateRequest.getBoardIds() != null && !cloneCreateRequest.getBoardIds().isEmpty()) {
             for (Long boardId : cloneCreateRequest.getBoardIds()) {
-                AddCloneToBoardRequest addRequest = new AddCloneToBoardRequest();
+                BoardSubscriptionRequest addRequest = new BoardSubscriptionRequest();
                 addRequest.setBoardId(boardId);
                 cloneBoardService.addCloneToBoard(cloneId, addRequest); // TODO: 리스트로 받아서 DB 호출을 줄이는 방법 필요
             }
@@ -57,7 +58,7 @@ public class CloneService {
     }
 
     @Transactional(readOnly = true)
-    public List<CloneInfoResponse> getMyClones(Long userId) {
+    public List<CloneInfoResponse> getMyClonesInfo(Long userId) {
         return cloneRepository.findAllByUserId(userId);
     }
 
@@ -93,8 +94,13 @@ public class CloneService {
     }
 
     @Transactional(readOnly = true)
-    public List<CloneInBoardInfoResponse> getClonesInBoard(Long boardId) {
-        return cloneRepository.findClonesInBoard(boardId, 0);
+    public List<CloneInBoardInfoResponse> getAllClonesInBoard(Long boardId) {
+        return cloneRepository.findAllClonesInBoard(boardId, 0);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CloneInBoardInfoResponse> getMyClonesInBoard(Long boardId, Long userId) {
+        return cloneRepository.findMyClonesInBoard(boardId, userId, 0);
     }
 
 }

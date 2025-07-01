@@ -14,8 +14,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/v1/replies")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Slf4j
 public class ReplyController {
@@ -23,23 +25,37 @@ public class ReplyController {
     private final ReplyService replyService;
     private final AuthService authService;
 
-    @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> createReply(@Valid @RequestBody ReplyCreateRequest replyCreateRequest) {
+    @PostMapping(value = "/posts/{postId}/replies", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> createReply(@PathVariable("postId") Long postId, @Valid @RequestBody ReplyCreateRequest replyCreateRequest) {
         return ResponseEntity.ok(
                 CommonResponse.<Integer>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
-                        .data(replyService.createReply(replyCreateRequest))
+                        .data(replyService.createReply(postId, replyCreateRequest))
                         .build());
     }
 
-    @GetMapping(value = "/{replyId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getReply(@PathVariable Long replyId) {
+    // TODO: 댓글 수정
+
+    // TODO: 댓글 삭제
+
+    @GetMapping(value = "/replies/{replyId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getReplyInfo(@PathVariable Long replyId) {
         return ResponseEntity.ok(
                 CommonResponse.<ReplyInfoResponse>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(replyService.getReplyInfo(replyId))
+                        .build());
+    }
+
+    @GetMapping("/posts/{postId}/replies")
+    public ResponseEntity<?> getRepliesByPostId(@PathVariable("postId") Long postId) {
+        return ResponseEntity.ok(
+                CommonResponse.<List<ReplyInfoResponse>>builder()
+                        .successOrNot(CommonConstant.YES_FLAG)
+                        .statusCode(CommonStatus.SUCCESS)
+                        .data(replyService.getRepliesInPost(postId))
                         .build());
     }
 

@@ -21,4 +21,6 @@ public class CloneInBoardInfoResponse {
 
     public Integer isActive;
 
+//    public Integer isMine;
+
 }

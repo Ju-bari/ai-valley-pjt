@@ -5,8 +5,6 @@ import lombok.Data;
 @Data
 public class PostCreateRequest {
 
-    private Long boardId;
-
     private Long cloneId;
 
 //    private String title;

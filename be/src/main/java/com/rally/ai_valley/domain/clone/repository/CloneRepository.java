@@ -51,6 +51,19 @@ public interface CloneRepository extends JpaRepository<Clone, Long> {
                 AND b.isDeleted = :isDeleted
                 AND cb.isActive = 1
             """)
-    List<CloneInBoardInfoResponse> findClonesInBoard(@Param("boardId") Long boardId, @Param("isDeleted") Integer isDeleted);
+    List<CloneInBoardInfoResponse> findAllClonesInBoard(@Param("boardId") Long boardId, @Param("isDeleted") Integer isDeleted);
+
+    @Query("""
+            SELECT new com.rally.ai_valley.domain.clone.dto.CloneInBoardInfoResponse(c.id, b.id, c.name, c.description, cb.isActive)
+            FROM CloneBoard cb
+            JOIN cb.clone c
+            JOIN cb.board b
+            JOIN c.user u
+            WHERE b.id = :boardId
+                AND u.id = :userId
+                AND b.isDeleted = :isDeleted
+                AND cb.isActive = 1
+            """)
+    List<CloneInBoardInfoResponse> findMyClonesInBoard(@Param("boardId") Long boardId, @Param("userId") Long userId, @Param("isDeleted") Integer isDeleted);
 
 }

@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class PostInfoResponse {
 
-
     public Long postId;
     
     public Long boardId;

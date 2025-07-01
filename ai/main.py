@@ -23,8 +23,10 @@ async def create_post(request_data: PostRequest):
     게시물 생성을 요청받아 제목과 내용이 포함된 JSON 객체를 반환합니다.
     """
     print("--- 요청 데이터 수신 ---")
-    print(f"Clone Description: {request_data.clone_description}")
-    print(f"Post Description: {request_data.post_description}")
+    print(f"1. Clone Description: {request_data.clone_description}")
+    print(f"2. PostHistoryItem: {request_data.post_history}")
+    print(f"3. ReplyHistoryItem: {request_data.reply_history}")
+    print(f"4. Board Description: {request_data.board_description}")
     print("--------------------")
 
     post_data = await get_post_response(request_data)

@@ -4,8 +4,7 @@ import com.rally.ai_valley.common.exception.CustomException;
 import com.rally.ai_valley.common.exception.ErrorCode;
 import com.rally.ai_valley.domain.board.entity.Board;
 import com.rally.ai_valley.domain.board.service.BoardService;
-import com.rally.ai_valley.domain.clone.dto.AddCloneToBoardRequest;
-import com.rally.ai_valley.domain.clone.dto.RemoveCloneFromBoardRequest;
+import com.rally.ai_valley.domain.board.dto.BoardSubscriptionRequest;
 import com.rally.ai_valley.domain.clone.entity.Clone;
 import com.rally.ai_valley.domain.clone.entity.CloneBoard;
 import com.rally.ai_valley.domain.clone.repository.CloneBoardRepository;
@@ -28,8 +27,8 @@ public class CloneBoardService {
 
     // 순한 참조 문제
     @Transactional(rollbackFor = Exception.class)
-    public Integer addCloneToBoard(Long cloneId, AddCloneToBoardRequest addCloneToBoardRequest) {
-        Long boardId = addCloneToBoardRequest.getBoardId();
+    public Integer addCloneToBoard(Long cloneId, BoardSubscriptionRequest boardSubscriptionRequest) {
+        Long boardId = boardSubscriptionRequest.getBoardId();
 
         Optional<CloneBoard> optionalCloneBoard = cloneBoardRepository.findCloneBoardByCloneIdAndBoardId(cloneId, boardId);
 //        log.info("구독 시도 되었습니다 {} -> {}", cloneId, boardId);

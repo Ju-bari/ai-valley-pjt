@@ -6,12 +6,11 @@ import com.rally.ai_valley.domain.board.entity.Board;
 import com.rally.ai_valley.domain.board.service.BoardService;
 import com.rally.ai_valley.domain.clone.entity.Clone;
 import com.rally.ai_valley.domain.clone.service.CloneService;
-import com.rally.ai_valley.domain.post.dto.AiPostCreateRequest;
-import com.rally.ai_valley.domain.post.dto.AiPostCreateResponse;
-import com.rally.ai_valley.domain.post.dto.PostCreateRequest;
-import com.rally.ai_valley.domain.post.dto.PostInfoResponse;
+import com.rally.ai_valley.domain.post.dto.*;
 import com.rally.ai_valley.domain.post.entity.Post;
 import com.rally.ai_valley.domain.post.repository.PostRepository;
+import com.rally.ai_valley.domain.reply.dto.ReplyInfoResponseForAi;
+import com.rally.ai_valley.domain.reply.repository.ReplyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
@@ -33,6 +32,7 @@ public class PostService {
     private final BoardService boardService;
     private final CloneService cloneService;
     private final WebClient webClient;
+    private final ReplyRepository replyRepository;
 
     @Transactional(readOnly = true)
     public Post getPostById(Long postId) {
@@ -41,9 +41,12 @@ public class PostService {
     }
 
     @Transactional
-    public PostInfoResponse createPost(PostCreateRequest postCreateRequest) {
-        Board findBoard = boardService.getBoardById(postCreateRequest.getBoardId());
+    public PostInfoResponse createPost(Long boardId, PostCreateRequest postCreateRequest) {
+        Board findBoard = boardService.getBoardById(boardId);
         Clone findClone = cloneService.getCloneById(postCreateRequest.getCloneId());
+        List<PostInfoResponseForAi> findPosts = postRepository.findPostsByCloneIdForAi(postCreateRequest.getCloneId(), 0);
+        // TODO: 댓글만 줘야하나, 게시글과 댓글 매핑해서 줘야하나. -> 포스트 중의 댓글을 내 것으로만 가져가던가 vs. 그냥 내 아이디로만 순수하게 댓글 가져오기 -> 우선 내가 쓴 댓글들만 가져오자.
+        List<ReplyInfoResponseForAi> findReplies = replyRepository.findRepliesByCloneIdForAi(postCreateRequest.getCloneId());
 
         List<String> tmp = new ArrayList<>();
 
@@ -51,8 +54,8 @@ public class PostService {
         AiPostCreateResponse aiResponse = requestAiCreatePost(
                 findClone.getId(),
                 findClone.getDescription(),
-                tmp,
-                tmp,
+                findPosts,
+                findReplies,
                 findBoard.getDescription()
         );
 
@@ -68,9 +71,9 @@ public class PostService {
     }
 
     private AiPostCreateResponse requestAiCreatePost(Long cloneId, String cloneDescription,
-                                                     List<String> postHistory,
-                                                     List<String> replyHistory,
-                                                     String postDescription) {
+                                                     List<PostInfoResponseForAi> postHistory,
+                                                     List<ReplyInfoResponseForAi> replyHistory,
+                                                     String boardDescription) {
         try {
             // 요청 데이터 생성
             AiPostCreateRequest request = new AiPostCreateRequest();
@@ -78,9 +81,9 @@ public class PostService {
             request.setCloneDescription(cloneDescription);
             request.setPostHistory(postHistory);
             request.setReplyHistory(replyHistory);
-            request.setPostDescription(postDescription);
+            request.setBoardDescription(boardDescription);
 
-            log.info("AI 서버 요청 시작 - CloneId: {}, PostDescribe: {}", cloneId, postDescription);
+            log.info("AI 서버 요청 시작 - CloneId: {}, PostDescribe: {}", cloneId, boardDescription);
 
             return webClient
                     .post()

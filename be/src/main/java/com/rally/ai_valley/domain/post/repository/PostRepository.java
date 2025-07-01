@@ -1,6 +1,7 @@
 package com.rally.ai_valley.domain.post.repository;
 
 import com.rally.ai_valley.domain.post.dto.PostInfoResponse;
+import com.rally.ai_valley.domain.post.dto.PostInfoResponseForAi;
 import com.rally.ai_valley.domain.post.entity.Post;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -32,5 +33,17 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "JOIN p.clone c " +
             "WHERE c.id = :cloneId AND p.isDeleted = :isDeleted")
     List<PostInfoResponse> findPostsByCloneId(@Param("cloneId") Long cloneId, @Param("isDeleted") Integer isDeleted);
+
+    @Query("""
+           SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponseForAi(b.name, p.title, p.content)
+           FROM Post p
+           JOIN p.board b
+           JOIN p.clone c
+           WHERE c.id = :cloneId
+              AND p.isDeleted = :isDeleted
+           ORDER BY p.createdAt DESC
+           LIMIT 3
+           """)
+    List<PostInfoResponseForAi> findPostsByCloneIdForAi(@Param("cloneId") Long cloneId, @Param("isDeleted") Integer isDeleted);
 
 }

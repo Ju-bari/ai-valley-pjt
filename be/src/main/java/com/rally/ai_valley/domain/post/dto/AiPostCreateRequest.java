@@ -1,6 +1,7 @@
 package com.rally.ai_valley.domain.post.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.rally.ai_valley.domain.reply.dto.ReplyInfoResponseForAi;
 import lombok.Data;
 
 import java.util.List;
@@ -15,12 +16,12 @@ public class AiPostCreateRequest {
     private String cloneDescription;
 
     @JsonProperty("post_history")
-    private List<String> postHistory;
+    private List<PostInfoResponseForAi> postHistory;
 
     @JsonProperty("reply_history")
-    private List<String> replyHistory;
+    private List<ReplyInfoResponseForAi> replyHistory;
 
-    @JsonProperty("post_description")
-    private String postDescription;
+    @JsonProperty("board_description")
+    private String boardDescription;
 
 }

@@ -89,6 +89,22 @@ export default function PostCreateModal({
   const handleCreatePost = async () => {
     try {
       const postData = await createPost({ boardId, cloneId });
+      
+      // 응답 내용을 확인하여 오류인지 판단 (postTitle이 정확히 '오류 발생'인 경우에만)
+      if (postData.postTitle === '오류 발생') {
+        console.error('Post creation returned error response:', postData);
+        
+        // 3초간 로딩을 계속 보여준 후 실패 상태로 변경
+        setTimeout(() => {
+          setModalState('failed');
+          // 실패 콜백 호출 (쿨다운 롤백 등)
+          if (onFailed) {
+            onFailed();
+          }
+        }, 3000);
+        return;
+      }
+      
       setCreatedPost(postData);
       setModalState('success');
     } catch (error) {

@@ -1,6 +1,7 @@
 package com.rally.ai_valley.domain.reply.repository;
 
 import com.rally.ai_valley.domain.reply.dto.ReplyInfoResponse;
+import com.rally.ai_valley.domain.reply.dto.ReplyInfoResponseForAi;
 import com.rally.ai_valley.domain.reply.entity.Reply;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,23 +14,41 @@ import java.util.List;
 public interface ReplyRepository extends JpaRepository<Reply, Long> {
 
     @Query("""
-        SELECT new com.rally.ai_valley.domain.reply.dto.ReplyInfoResponse(r.id, p.id, c.id, c.name, r.content, r.createdAt)
+        SELECT new com.rally.ai_valley.domain.reply.dto.ReplyInfoResponse(r.id, p.id, c.id, c.name, r.content, r.createdAt, r.updatedAt)
         FROM Reply r
         LEFT JOIN r.clone c
         LEFT JOIN r.post p
-        WHERE r.post.id = :postId
+        WHERE p.id = :postId
+            AND p.isDeleted = 0
             AND r.isDeleted = 0
         ORDER BY r.createdAt DESC
     """)
-    List<ReplyInfoResponse> findRepliesByPost(@Param("postId") Long postId);
+    List<ReplyInfoResponse> findRepliesByPostId(@Param("postId") Long postId);
 
-//    @Query("""
-//        SELECT r FROM Reply r
-//        LEFT JOIN FETCH r.clone c
-//        LEFT JOIN FETCH r.parentReply
-//        WHERE r.post.id = :postId
-//            AND r.isDeleted = 0
-//        ORDER BY r.createdAt DESC
-//    """)
-//    List<Reply> findRepliesByPost(@Param("postId") Long postId);
+
+    @Query("""
+        SELECT new com.rally.ai_valley.domain.reply.dto.ReplyInfoResponse(r.id, p.id, c.id, c.name, r.content, r.createdAt, r.updatedAt)
+        FROM Reply r
+        LEFT JOIN r.clone c
+        LEFT JOIN r.post p
+        WHERE c.id = :cloneId
+            AND p.isDeleted = 0
+            AND r.isDeleted = 0
+        ORDER BY r.createdAt DESC
+    """)
+    List<ReplyInfoResponse> findRepliesByCloneId(@Param("cloneId") Long cloneId);
+
+    @Query("""
+        SELECT new com.rally.ai_valley.domain.reply.dto.ReplyInfoResponseForAi(p.title, r.content)
+        FROM Reply r
+        LEFT JOIN r.clone c
+        LEFT JOIN r.post p
+        WHERE c.id = :cloneId
+            AND p.isDeleted = 0
+            AND r.isDeleted = 0
+        ORDER BY r.createdAt DESC
+        LIMIT 3
+    """)
+    List<ReplyInfoResponseForAi> findRepliesByCloneIdForAi(@Param("cloneId") Long cloneId);
+
 }

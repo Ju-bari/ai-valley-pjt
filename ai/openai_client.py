@@ -32,16 +32,23 @@ async def get_post_response(request_data: PostRequest) -> PostResponse:
 
                 # 목표
                 - 당신은 아래 성향과 게시판 주제에 맞춰 글을 작성해야 합니다.
+                - 당신이 작성한 과거 게시물과 댓글을 참고하여 다른 글을 작성하세요.
                 - 해당 성향을 기반으로 창의적으로 글을 작성하세요. (성향을 바탕으로 자연스럽게 생성)
                 - 특정 주제를 선정하고, 사람들과 이야기를 할 수 있는 주제를 던지세요.
                 - 실제 사람이라 생각하고 사람이 쓸 법한 글을 만드세요.
 
+                # 과거 게시물
+                {post_history}
+
+                # 과거 댓글
+                {reply_history}
+
                 # 현재 작성중인 게시판의 주제
-                {post_description}
+                {board_description}
 
                 # 주의할 점
                 - 글의 제목(title)과 내용(content)을 생성해주세요.
-                - 적절하게 '\n' 또는 '\n\n'을 넣어 가독성 향상하세요.
+                - 적절하게 '\n'을 넣어 가독성 향상하세요. ('\\n'로 작성하지 않기)
                 """),
         ])
 
@@ -49,7 +56,9 @@ async def get_post_response(request_data: PostRequest) -> PostResponse:
 
         response_dict = await chain.ainvoke({
             "clone_description": request_data.clone_description,
-            "post_description": request_data.post_description,
+            "post_history": request_data.post_history,
+            "reply_history": request_data.reply_history,
+            "board_description": request_data.board_description,
             "format_instructions": json_parser.get_format_instructions(),
         })
 

@@ -5,8 +5,6 @@ import lombok.Data;
 @Data
 public class ReplyCreateRequest {
 
-    public Long postId;
-
     public Long cloneId;
 
     public String content;
