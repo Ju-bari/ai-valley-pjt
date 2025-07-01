@@ -10,60 +10,71 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
+// isActive
 @Repository
 public interface CloneRepository extends JpaRepository<Clone, Long> {
 
     @Query("""
+            SELECT c
+            FROM Clone c
+            WHERE c.id = :cloneId
+        """)
+    Optional<Clone> findCloneById(Long cloneId);
+
+    @Query("""
             SELECT new com.rally.ai_valley.domain.clone.dto.CloneInfoResponse(c.id, u.id, u.nickname, c.name, c.description, c.isActive)
             FROM Clone c
-            JOIN c.user u
+            LEFT JOIN c.user u
             WHERE u.id = :userId
         """)
-    List<CloneInfoResponse> findAllByUserId(@Param("userId") Long userId);
+    List<CloneInfoResponse> findAllClonesByUserId(@Param("userId") Long userId);
 
     @Query("""
             SELECT new com.rally.ai_valley.domain.clone.dto.CloneInfoResponse(c.id, u.id, u.nickname, c.name, c.description, c.isActive)
             FROM Clone c
-            JOIN c.user u
+            LEFT JOIN c.user u
             WHERE c.id = :cloneId
         """)
-    CloneInfoResponse getCloneByCloneId(@Param("cloneId") Long cloneId);
+    CloneInfoResponse findCloneByCloneId(@Param("cloneId") Long cloneId);
 
-    // 1) 별도 쿼리 + 최적화 가능, 2) LEFT JOIN + DISTINCT 가능
     @Query("""
             SELECT new com.rally.ai_valley.domain.clone.dto.CloneStatisticsResponse(
-                (SELECT COUNT(cb) FROM Clone c2 JOIN c2.cloneBoards cb WHERE c2.id = :cloneId AND cb.isActive = 1),
-                (SELECT COUNT(p) FROM Clone c2 JOIN c2.posts p WHERE c2.id = :cloneId AND p.isDeleted = 0),
-                (SELECT COUNT(r) FROM Clone c2 JOIN c2.replies r WHERE c2.id = :cloneId AND r.isDeleted = 0)
+                COUNT(DISTINCT cb.cloneBoardId),
+                COUNT(DISTINCT p.id),
+                COUNT(DISTINCT r.id)
             )
             FROM Clone c
+            LEFT JOIN c.cloneBoards cb ON cb.isActive = 1
+            LEFT JOIN c.posts p ON p.isDeleted = 0
+            LEFT JOIN c.replies r ON r.isDeleted = 0
             WHERE c.id = :cloneId
         """)
-    CloneStatisticsResponse findUserStatistics(@Param("cloneId") Long cloneId);
+    CloneStatisticsResponse findUserStatisticsByCloneId(@Param("cloneId") Long cloneId);
 
     @Query("""
             SELECT new com.rally.ai_valley.domain.clone.dto.CloneInBoardInfoResponse(c.id, b.id, c.name, c.description, cb.isActive)
             FROM CloneBoard cb
-            JOIN cb.clone c
-            JOIN cb.board b
+            LEFT JOIN cb.clone c
+            LEFT JOIN cb.board b
             WHERE b.id = :boardId
-                AND b.isDeleted = :isDeleted
+                AND b.isDeleted = 0
                 AND cb.isActive = 1
             """)
-    List<CloneInBoardInfoResponse> findAllClonesInBoard(@Param("boardId") Long boardId, @Param("isDeleted") Integer isDeleted);
+    List<CloneInBoardInfoResponse> findAllClonesInBoard(@Param("boardId") Long boardId);
 
     @Query("""
             SELECT new com.rally.ai_valley.domain.clone.dto.CloneInBoardInfoResponse(c.id, b.id, c.name, c.description, cb.isActive)
             FROM CloneBoard cb
-            JOIN cb.clone c
-            JOIN cb.board b
-            JOIN c.user u
+            LEFT JOIN cb.clone c
+            LEFT JOIN cb.board b
+            LEFT JOIN c.user u
             WHERE b.id = :boardId
                 AND u.id = :userId
-                AND b.isDeleted = :isDeleted
+                AND b.isDeleted = 0
                 AND cb.isActive = 1
             """)
-    List<CloneInBoardInfoResponse> findMyClonesInBoard(@Param("boardId") Long boardId, @Param("userId") Long userId, @Param("isDeleted") Integer isDeleted);
+    List<CloneInBoardInfoResponse> findMyClonesInBoard(@Param("boardId") Long boardId, @Param("userId") Long userId);
 
 }

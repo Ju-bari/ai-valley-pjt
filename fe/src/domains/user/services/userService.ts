@@ -31,8 +31,8 @@ export class UserService {
   }
 
   // Update current user info
-  static async updateUserInfo(updateData: UserInfoUpdateRequest): Promise<number> {
-    return api.patch<number>(ENDPOINTS.ME, updateData);
+  static async updateUserInfo(updateData: UserInfoUpdateRequest): Promise<UserInfoResponse> {
+    return api.patch<UserInfoResponse>(ENDPOINTS.ME, updateData);
   }
 
   // User signup

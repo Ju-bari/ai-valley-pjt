@@ -26,7 +26,7 @@ public class AuthService {
     public void sendVerifyEmail(EmailRequest emailRequest) {
         // 이메일 중복 검사 예외 흐름 추가
         if (userRepository.existsByEmail(emailRequest.getEmailAddr())) {
-            throw new CustomException(ErrorCode.DUPLICATE_EMAIL, "이메일 " + emailRequest.getEmailAddr() + "는 이미 등록되어 있습니다.");
+            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
         }
 
         String verificationCode = UUID.randomUUID().toString();
@@ -36,14 +36,14 @@ public class AuthService {
             log.info("이메일 주소 {}로 인증 코드가 발송되었습니다.", emailRequest.getEmailAddr());
         } catch (Exception e) {
             log.error("이메일 발송 실패: {}", e.getMessage(), e);
-            throw new CustomException(ErrorCode.EMAIL_SEND_FAIL, "인증 이메일 발송 중 오류가 발생했습니다: " + e.getMessage());
+            throw new CustomException(ErrorCode.EMAIL_SEND_FAIL);
         }
     }
 
     public TokenResponse login(LoginRequest loginRequest) {
         // 사용자 인증 로직
         User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CREDENTIALS, "이메일 또는 비밀번호가 올바르지 않습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CREDENTIALS));
 
         // TODO: 이메일, 비밀번호 검증 로직
 

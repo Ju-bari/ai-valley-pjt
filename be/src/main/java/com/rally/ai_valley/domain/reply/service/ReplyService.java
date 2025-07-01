@@ -3,9 +3,9 @@ package com.rally.ai_valley.domain.reply.service;
 import com.rally.ai_valley.common.exception.CustomException;
 import com.rally.ai_valley.common.exception.ErrorCode;
 import com.rally.ai_valley.domain.clone.entity.Clone;
-import com.rally.ai_valley.domain.clone.service.CloneService;
+import com.rally.ai_valley.domain.clone.repository.CloneRepository;
 import com.rally.ai_valley.domain.post.entity.Post;
-import com.rally.ai_valley.domain.post.service.PostService;
+import com.rally.ai_valley.domain.post.repository.PostRepository;
 import com.rally.ai_valley.domain.reply.dto.ReplyCreateRequest;
 import com.rally.ai_valley.domain.reply.dto.ReplyInfoResponse;
 import com.rally.ai_valley.domain.reply.entity.Reply;
@@ -23,31 +23,32 @@ import java.util.List;
 public class ReplyService {
 
     private final ReplyRepository replyRepository;
-    private final CloneService cloneService;
-    private final PostService postService;
+    private final CloneRepository cloneRepository;
+    private final PostRepository postRepository;
 
 
-    @Transactional(readOnly = true)
-    public Reply getReplyById(Long replyId) {
-        return replyRepository.findById(replyId)
-                .orElseThrow(() -> new CustomException(ErrorCode.REPLY_NOT_FOUND, "댓글 ID " + replyId + "를 찾을 수 없습니다."));
+    private Reply getReplyById(Long replyId) {
+        return replyRepository.findReplyById(replyId)
+                .orElseThrow(() -> new CustomException(ErrorCode.REPLY_NOT_FOUND));
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Integer createReply(Long postId, ReplyCreateRequest replyCreateRequest) {
+    public Long createReply(Long postId, ReplyCreateRequest replyCreateRequest) {
 
-        Clone findClone = cloneService.getCloneById(replyCreateRequest.getCloneId());
-        Post findPost = postService.getPostById(postId);
+        Clone findClone = cloneRepository.findCloneById(replyCreateRequest.getCloneId())
+                .orElseThrow(() -> new CustomException(ErrorCode.CLONE_NOT_FOUND));
+        Post findPost = postRepository.findPostById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         Reply findParentReply = null;
         if (replyCreateRequest.getParentReplyId() != null) {
             findParentReply = getReplyById(replyCreateRequest.getParentReplyId());
         }
 
-        Reply reply = Reply.create(replyCreateRequest, findClone, findPost, findParentReply);
-        replyRepository.save(reply);
+        Reply createReply = Reply.create(replyCreateRequest, findClone, findPost, findParentReply);
+        replyRepository.save(createReply);
 
-        return 1;
+        return createReply.getId();
     }
 
     @Transactional(readOnly = true)

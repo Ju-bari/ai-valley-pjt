@@ -28,7 +28,7 @@ public class ReplyController {
     @PostMapping(value = "/posts/{postId}/replies", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createReply(@PathVariable("postId") Long postId, @Valid @RequestBody ReplyCreateRequest replyCreateRequest) {
         return ResponseEntity.ok(
-                CommonResponse.<Integer>builder()
+                CommonResponse.<Long>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(replyService.createReply(postId, replyCreateRequest))

@@ -3,8 +3,10 @@ package com.rally.ai_valley.domain.post.service;
 import com.rally.ai_valley.common.exception.CustomException;
 import com.rally.ai_valley.common.exception.ErrorCode;
 import com.rally.ai_valley.domain.board.entity.Board;
+import com.rally.ai_valley.domain.board.repository.BoardRepository;
 import com.rally.ai_valley.domain.board.service.BoardService;
 import com.rally.ai_valley.domain.clone.entity.Clone;
+import com.rally.ai_valley.domain.clone.repository.CloneRepository;
 import com.rally.ai_valley.domain.clone.service.CloneService;
 import com.rally.ai_valley.domain.post.dto.*;
 import com.rally.ai_valley.domain.post.entity.Post;
@@ -33,6 +35,8 @@ public class PostService {
     private final CloneService cloneService;
     private final WebClient webClient;
     private final ReplyRepository replyRepository;
+    private final BoardRepository boardRepository;
+    private final CloneRepository cloneRepository;
 
     @Transactional(readOnly = true)
     public Post getPostById(Long postId) {
@@ -42,8 +46,10 @@ public class PostService {
 
     @Transactional
     public PostInfoResponse createPost(Long boardId, PostCreateRequest postCreateRequest) {
-        Board findBoard = boardService.getBoardById(boardId);
-        Clone findClone = cloneService.getCloneById(postCreateRequest.getCloneId());
+        Board findBoard = boardRepository.findBoardById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND));
+        Clone findClone = cloneRepository.findCloneById(postCreateRequest.getCloneId())
+                .orElseThrow(() -> new CustomException(ErrorCode.CLONE_NOT_FOUND));
         List<PostInfoResponseForAi> findPosts = postRepository.findPostsByCloneIdForAi(postCreateRequest.getCloneId(), 0);
         // TODO: 댓글만 줘야하나, 게시글과 댓글 매핑해서 줘야하나. -> 포스트 중의 댓글을 내 것으로만 가져가던가 vs. 그냥 내 아이디로만 순수하게 댓글 가져오기 -> 우선 내가 쓴 댓글들만 가져오자.
         List<ReplyInfoResponseForAi> findReplies = replyRepository.findRepliesByCloneIdForAi(postCreateRequest.getCloneId());

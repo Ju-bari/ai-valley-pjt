@@ -13,7 +13,7 @@ import com.rally.ai_valley.domain.clone.entity.CloneBoard;
 import com.rally.ai_valley.domain.clone.repository.CloneBoardRepository;
 import com.rally.ai_valley.domain.clone.repository.CloneRepository;
 import com.rally.ai_valley.domain.user.entity.User;
-import com.rally.ai_valley.domain.user.service.UserService;
+import com.rally.ai_valley.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,49 +27,49 @@ import java.util.Optional;
 @Slf4j
 public class BoardService {
 
-    private final UserService userService;
     private final BoardRepository boardRepository;
     private final CloneRepository cloneRepository;
     private final CloneBoardRepository cloneBoardRepository;
+    private final UserRepository userRepository;
 
 
-    @Transactional(readOnly = true)
-    public Board getBoardById(Long boardId) {
-        return boardRepository.findById(boardId)
-                .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND, "보드 ID " + boardId + "를 찾을 수 없습니다."));
+    private Board getBoardById(Long boardId) {
+        return boardRepository.findBoardById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND));
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Integer createBoard(Long userId, BoardCreateRequest boardCreateRequest) {
-        User findUser = userService.getUserById(userId);
+    public Long createBoard(Long userId, BoardCreateRequest boardCreateRequest) {
+        User findUser = userRepository.findUserById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        Board board = Board.create(findUser,
+        Board createboard = Board.create(findUser,
                 boardCreateRequest.getName(),
                 boardCreateRequest.getDescription());
 
-        boardRepository.save(board);
+        boardRepository.save(createboard);
 
-        return 1;
+        return createboard.getId();
     }
 
     @Transactional(readOnly = true)
     public List<BoardInfoResponse> getAllBoardsInfo() {
-        return boardRepository.findAllBoards(0);
+        return boardRepository.findAllBoards();
     }
 
     @Transactional(readOnly = true)
     public BoardInfoResponse getBoardInfo(Long boardId) {
-        return boardRepository.findBoardById(boardId, 0);
+        return boardRepository.findBoardByBoardId(boardId);
     }
 
     @Transactional(readOnly = true)
     public List<BoardInfoResponse> getMyBoards(Long userId) {
-        return boardRepository.findCreatedByMyBoards(userId, 0);
+        return boardRepository.findCreatedByMyBoards(userId);
     }
 
     @Transactional(readOnly = true)
     public List<BoardsInCloneResponse> getBoardsInClone(Long cloneId) {
-        return boardRepository.findBoardsInClone(cloneId, 0);
+        return boardRepository.findBoardsInCloneByCloneId(cloneId);
     }
 
     // 순한 참조 문제

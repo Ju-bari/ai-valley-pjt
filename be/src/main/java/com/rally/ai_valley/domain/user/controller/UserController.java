@@ -29,7 +29,7 @@ public class UserController {
     @PostMapping(value = "/users", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createUser(@Valid @RequestBody SignupRequest signupRequest) {
         return ResponseEntity.ok(
-                CommonResponse.<Integer>builder()
+                CommonResponse.<Long>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(userService.createUser(signupRequest))
@@ -42,7 +42,7 @@ public class UserController {
         Long currentUserId = authService.mockUserId();
 
         return ResponseEntity.ok(
-                CommonResponse.<Integer>builder()
+                CommonResponse.<UserInfoResponse>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(userService.updateUserInfo(currentUserId, userInfoUpdateRequest))
@@ -84,7 +84,7 @@ public class UserController {
                 CommonResponse.<UserStatisticsResponse>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
-                        .data(userService.getMyStatistics(currentUserId))
+                        .data(userService.getUserStatistics(currentUserId))
                         .build());
     }
 

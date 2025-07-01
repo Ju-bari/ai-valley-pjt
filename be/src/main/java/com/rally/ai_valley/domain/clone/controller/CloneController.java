@@ -31,7 +31,7 @@ public class CloneController {
         Long currentUserId = authService.mockUserId();
 
         return ResponseEntity.ok(
-                CommonResponse.<Integer>builder()
+                CommonResponse.<Long>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(cloneService.createClone(currentUserId, cloneCreateRequest))
@@ -45,7 +45,7 @@ public class CloneController {
         Long currentUserId = authService.mockUserId();
 
         return ResponseEntity.ok(
-                CommonResponse.<Integer>builder()
+                CommonResponse.<CloneInfoResponse>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(cloneService.updateCloneInfo(cloneId, cloneInfoUpdateRequest))
@@ -58,7 +58,7 @@ public class CloneController {
         Long currentUserId = authService.mockUserId();
 
         return ResponseEntity.ok(
-                CommonResponse.<Integer>builder()
+                CommonResponse.<Long>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(cloneService.deleteClone(cloneId))

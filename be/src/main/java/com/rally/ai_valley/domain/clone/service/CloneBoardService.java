@@ -3,6 +3,7 @@ package com.rally.ai_valley.domain.clone.service;
 import com.rally.ai_valley.common.exception.CustomException;
 import com.rally.ai_valley.common.exception.ErrorCode;
 import com.rally.ai_valley.domain.board.entity.Board;
+import com.rally.ai_valley.domain.board.repository.BoardRepository;
 import com.rally.ai_valley.domain.board.service.BoardService;
 import com.rally.ai_valley.domain.board.dto.BoardSubscriptionRequest;
 import com.rally.ai_valley.domain.clone.entity.Clone;
@@ -24,6 +25,7 @@ public class CloneBoardService {
     private final BoardService boardService;
     private final CloneBoardRepository cloneBoardRepository;
     private final CloneRepository cloneRepository;
+    private final BoardRepository boardRepository;
 
     // 순한 참조 문제
     @Transactional(rollbackFor = Exception.class)
@@ -47,7 +49,9 @@ public class CloneBoardService {
             // 데이터가 아예 존재하지 않는 경우
             Clone findClone = cloneRepository.findById(cloneId)
                     .orElseThrow(() -> new CustomException(ErrorCode.CLONE_NOT_FOUND)); // 순한 참조 방지를 위해 repository 직접 호출
-            Board findBoard = boardService.getBoardById(boardId);
+            Board findBoard = boardRepository.findBoardById(boardId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND));
+
 
             CloneBoard cloneBoard = CloneBoard.create(findClone, findBoard);
             cloneBoardRepository.save(cloneBoard);

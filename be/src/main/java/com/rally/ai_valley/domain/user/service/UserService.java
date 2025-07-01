@@ -2,9 +2,6 @@ package com.rally.ai_valley.domain.user.service;
 
 import com.rally.ai_valley.common.exception.CustomException;
 import com.rally.ai_valley.common.exception.ErrorCode;
-import com.rally.ai_valley.domain.clone.repository.CloneRepository;
-import com.rally.ai_valley.domain.post.repository.PostRepository;
-import com.rally.ai_valley.domain.reply.repository.ReplyRepository;
 import com.rally.ai_valley.domain.user.dto.SignupRequest;
 import com.rally.ai_valley.domain.user.dto.UserInfoResponse;
 import com.rally.ai_valley.domain.user.dto.UserInfoUpdateRequest;
@@ -22,33 +19,29 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final PostRepository postRepository;
-    private final ReplyRepository replyRepository;
-    private final CloneRepository cloneRepository;
 
 
-    @Transactional(readOnly = true)
-    public User getUserById(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자 ID " + userId + "를 찾을 수 없습니다."));
+    private User getUserById(Long userId) {
+        return userRepository.findUserById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Integer createUser(SignupRequest signupRequest) {
-        User user = User.create(signupRequest); // 기본 역할 설정
-        userRepository.save(user);
+    public Long createUser(SignupRequest signupRequest) {
+        User createUser = User.create(signupRequest); // 기본 역할 설정: ROLE_USER
+        userRepository.save(createUser);
 
-        return 1;
+        return createUser.getId();
     }
 
     @Transactional(readOnly = true)
     public boolean isEmailDuplicate(String email) {
-        return userRepository.findByEmail(email).isPresent();
+        return userRepository.existsByEmail(email);
     }
 
     @Transactional(readOnly = true)
     public boolean isNicknameDuplicate(String nickname) {
-        return userRepository.findByNickname(nickname).isPresent();
+        return userRepository.existsByNickname(nickname);
     }
 
     @Transactional(readOnly = true)
@@ -59,18 +52,16 @@ public class UserService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Integer updateUserInfo(Long userId, UserInfoUpdateRequest userInfoUpdateRequest) {
+    public UserInfoResponse updateUserInfo(Long userId, UserInfoUpdateRequest userInfoUpdateRequest) {
         User findUser = getUserById(userId);
 
         findUser.updateInfo(userInfoUpdateRequest);
-        userRepository.save(findUser);
 
-        return 1;
+        return UserInfoResponse.fromEntity(findUser);
     }
 
-    @Transactional(readOnly = false)
-    public UserStatisticsResponse getMyStatistics(Long userId) {
-//        User findUser = getUserById(userId);
+    @Transactional(readOnly = true)
+    public UserStatisticsResponse getUserStatistics(Long userId) {
         return userRepository.findUserStatistics(userId);
     }
 

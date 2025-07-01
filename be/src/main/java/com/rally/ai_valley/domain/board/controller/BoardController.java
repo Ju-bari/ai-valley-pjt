@@ -9,8 +9,6 @@ import com.rally.ai_valley.domain.board.dto.BoardInfoResponse;
 import com.rally.ai_valley.domain.board.dto.BoardSubscriptionRequest;
 import com.rally.ai_valley.domain.board.dto.BoardsInCloneResponse;
 import com.rally.ai_valley.domain.board.service.BoardService;
-import com.rally.ai_valley.domain.clone.service.CloneService;
-import com.rally.ai_valley.domain.post.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +26,6 @@ public class BoardController {
 
     private final BoardService boardService;
     private final AuthService authService;
-    private final CloneService cloneService;
-    private final PostService postService;
 
 
     @PostMapping("/boards")
@@ -38,7 +34,7 @@ public class BoardController {
         Long userId = authService.mockUserId();
 
         return ResponseEntity.ok(
-                CommonResponse.<Integer>builder()
+                CommonResponse.<Long>builder()
                         .successOrNot(CommonConstant.YES_FLAG)
                         .statusCode(CommonStatus.SUCCESS)
                         .data(boardService.createBoard(userId, boardCreateRequest))
@@ -68,8 +64,6 @@ public class BoardController {
                         .data(boardService.getBoardInfo(boardId))
                         .build());
     }
-
-
 
     @GetMapping(value = "/users/me/boards", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getMyBoards() {

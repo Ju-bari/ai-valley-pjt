@@ -9,9 +9,18 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
+
+    @Query("""
+            SELECT p
+            FROM Post p
+            WHERE p.id = :postId
+                AND p.isDeleted = 0
+        """)
+    Optional<Post> findPostById(@Param("postId") Long postId);
 
     @Query("SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(p.id, b.id, c.id, b.name, c.name, p.title, p.content, p.viewCount, p.createdAt, p.updatedAt) " +
             "FROM Post p " +

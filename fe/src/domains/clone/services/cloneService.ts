@@ -34,8 +34,8 @@ export class CloneService {
   /**
    * Update clone info
    */
-  static async updateCloneInfo(cloneId: number, updateData: CloneInfoUpdateRequest): Promise<void> {
-    return api.patch<void>(ENDPOINTS.CLONE_BY_ID(cloneId), updateData);
+  static async updateCloneInfo(cloneId: number, updateData: CloneInfoUpdateRequest): Promise<CloneInfoResponse> {
+    return api.patch<CloneInfoResponse>(ENDPOINTS.CLONE_BY_ID(cloneId), updateData);
   }
 
   /**

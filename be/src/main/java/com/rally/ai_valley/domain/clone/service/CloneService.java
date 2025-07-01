@@ -3,12 +3,11 @@ package com.rally.ai_valley.domain.clone.service;
 import com.rally.ai_valley.common.exception.CustomException;
 import com.rally.ai_valley.common.exception.ErrorCode;
 import com.rally.ai_valley.domain.board.dto.BoardSubscriptionRequest;
-import com.rally.ai_valley.domain.board.service.BoardService;
 import com.rally.ai_valley.domain.clone.dto.*;
 import com.rally.ai_valley.domain.clone.entity.Clone;
 import com.rally.ai_valley.domain.clone.repository.CloneRepository;
 import com.rally.ai_valley.domain.user.entity.User;
-import com.rally.ai_valley.domain.user.service.UserService;
+import com.rally.ai_valley.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,28 +21,27 @@ import java.util.List;
 public class CloneService {
 
     private final CloneRepository cloneRepository;
-    private final UserService userService;
-    private final BoardService boardService;
+    private final UserRepository userRepository;
     private final CloneBoardService cloneBoardService;
 
 
-    @Transactional(readOnly = true)
-    public Clone getCloneById(Long cloneId) {
-        return cloneRepository.findById(cloneId)
-                .orElseThrow(() -> new CustomException(ErrorCode.CLONE_NOT_FOUND, "클론 ID " + cloneId + "를 찾을 수 없습니다."));
+    private Clone getCloneById(Long cloneId) {
+        return cloneRepository.findCloneById(cloneId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CLONE_NOT_FOUND));
     }
 
     // 아이디 받아오는 로직
     @Transactional(rollbackFor = Exception.class)
-    public Integer createClone(Long userId, CloneCreateRequest cloneCreateRequest) {
-        User findUser = userService.getUserById(userId);
+    public Long createClone(Long userId, CloneCreateRequest cloneCreateRequest) {
+        User findUser = userRepository.findUserById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        Clone clone = Clone.create(findUser,
+        Clone createClone = Clone.create(findUser,
                 cloneCreateRequest.getName(),
                 cloneCreateRequest.getDescription());
 
-        Clone savedClone = cloneRepository.save(clone);
-        Long cloneId = savedClone.getId();
+        cloneRepository.save(createClone);
+        Long cloneId = createClone.getId();
 
         // 보드 연결 처리
         if (cloneCreateRequest.getBoardIds() != null && !cloneCreateRequest.getBoardIds().isEmpty()) {
@@ -54,53 +52,52 @@ public class CloneService {
             }
         }
 
-        return 1;
+        return createClone.getId();
     }
 
     @Transactional(readOnly = true)
     public List<CloneInfoResponse> getMyClonesInfo(Long userId) {
-        return cloneRepository.findAllByUserId(userId);
+        return cloneRepository.findAllClonesByUserId(userId);
     }
 
     @Transactional(readOnly = true)
     public CloneInfoResponse getCloneInfo(Long cloneId) {
-        return cloneRepository.getCloneByCloneId(cloneId);
+        return cloneRepository.findCloneByCloneId(cloneId);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Integer updateCloneInfo(Long cloneId, CloneInfoUpdateRequest cloneInfoUpdateRequest) {
+    public CloneInfoResponse updateCloneInfo(Long cloneId, CloneInfoUpdateRequest cloneInfoUpdateRequest) {
         Clone findClone = getCloneById(cloneId);
 
         findClone.updateInfo(cloneInfoUpdateRequest.getName(),
                 cloneInfoUpdateRequest.getDescription(),
                 cloneInfoUpdateRequest.getIsActive());
-        cloneRepository.save(findClone);
 
-        return 1;
+        return CloneInfoResponse.fromEntity(findClone);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Integer deleteClone(Long cloneId) {
+    public Long deleteClone(Long cloneId) {
         Clone findClone = getCloneById(cloneId);
 
         cloneRepository.delete(findClone);
 
-        return 1;
+        return findClone.getId();
     }
 
     @Transactional(readOnly = true)
     public CloneStatisticsResponse getCloneStatistics(Long cloneId) {
-        return cloneRepository.findUserStatistics(cloneId);
+        return cloneRepository.findUserStatisticsByCloneId(cloneId);
     }
 
     @Transactional(readOnly = true)
     public List<CloneInBoardInfoResponse> getAllClonesInBoard(Long boardId) {
-        return cloneRepository.findAllClonesInBoard(boardId, 0);
+        return cloneRepository.findAllClonesInBoard(boardId);
     }
 
     @Transactional(readOnly = true)
     public List<CloneInBoardInfoResponse> getMyClonesInBoard(Long boardId, Long userId) {
-        return cloneRepository.findMyClonesInBoard(boardId, userId, 0);
+        return cloneRepository.findMyClonesInBoard(boardId, userId);
     }
 
 }

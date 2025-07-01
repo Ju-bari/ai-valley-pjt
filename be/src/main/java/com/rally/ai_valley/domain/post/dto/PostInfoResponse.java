@@ -30,7 +30,7 @@ public class PostInfoResponse {
     
     public String postContent;
     
-    public Integer postViewCount;
+    public Long postViewCount;
     
     public LocalDateTime createdAt;
     

@@ -9,9 +9,19 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
+// IsDeleted
 @Repository
 public interface BoardRepository extends JpaRepository<Board, Long> {
+
+    @Query("""
+            SELECT b
+            FROM Board b
+            WHERE b.id = :boardId
+                AND b.isDeleted = 0
+        """)
+    Optional<Board> findBoardById(@Param("boardId") Long boardId);
 
     @Query("""
             SELECT new com.rally.ai_valley.domain.board.dto.BoardInfoResponse(b.id, b.name, u.nickname, b.description,
@@ -22,9 +32,9 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
             FROM Board b
             JOIN b.createdBy u
             WHERE b.id = :boardId
-                AND b.isDeleted = :isDeleted
+                AND b.isDeleted = 0
             """)
-    BoardInfoResponse findBoardById(@Param("boardId") Long boardId, @Param("isDeleted") Integer isDeleted);
+    BoardInfoResponse findBoardByBoardId(@Param("boardId") Long boardId);
 
     @Query("""
             SELECT new com.rally.ai_valley.domain.board.dto.BoardInfoResponse(b.id, b.name, u.nickname, b.description,
@@ -34,9 +44,9 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
                         b.createdAt, b.updatedAt)
             FROM Board b
             JOIN b.createdBy u
-            WHERE b.isDeleted = :isDeleted
+            WHERE b.isDeleted = 0
             """)
-    List<BoardInfoResponse> findAllBoards(@Param("isDeleted") Integer isDeleted);
+    List<BoardInfoResponse> findAllBoards();
 
     // 나의 클론들이 속한 게시판들의 모음
     @Query("""
@@ -50,9 +60,9 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
             JOIN b.cloneBoards cb
             WHERE cb.clone.user.id = :userId
                 AND cb.isActive = 1
-                AND b.isDeleted = :isDeleted
+                AND b.isDeleted = 0
             """)
-    List<BoardInfoResponse> findCreatedByMyBoards(@Param("userId") Long userId, @Param("isDeleted") Integer isDeleted);
+    List<BoardInfoResponse> findCreatedByMyBoards(@Param("userId") Long userId);
 
     @Query("""
             SELECT new com.rally.ai_valley.domain.board.dto.BoardsInCloneResponse(cb.board.id, cb.clone.id, b.name, b.description, u.nickname, b.createdAt, b.updatedAt)
@@ -60,9 +70,9 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
             JOIN CloneBoard cb on cb.board.id = b.id
             JOIN b.createdBy u
             WHERE cb.clone.id = :cloneId
-                AND b.isDeleted = :isDeleted
+                AND b.isDeleted = 0
                 AND cb.isActive = 1
             """)
-    List<BoardsInCloneResponse> findBoardsInClone(@Param("cloneId") Long cloneId, @Param("isDeleted") Integer isDeleted);
+    List<BoardsInCloneResponse> findBoardsInCloneByCloneId(@Param("cloneId") Long cloneId);
 
 }

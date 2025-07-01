@@ -4,13 +4,13 @@ import com.rally.ai_valley.domain.board.entity.Board;
 import com.rally.ai_valley.domain.clone.entity.Clone;
 import com.rally.ai_valley.common.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "posts")
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Post extends BaseEntity {
 
@@ -34,19 +34,21 @@ public class Post extends BaseEntity {
     private String content;
 
     @Column(name = "view_count", nullable = false)
-    private Integer viewCount = 0;
+    private Long viewCount;
 
     @Column(name = "is_deleted", nullable = false)
-    private Integer isDeleted = 0;
+    private Integer isDeleted;
 
 
     public static Post create(Board board, Clone clone, String title, String content) {
-        Post post = new Post();
-        post.board = board;
-        post.clone = clone;
-        post.title = title;
-        post.content = content;
-        return post;
+        return Post.builder()
+                .board(board)
+                .clone(clone)
+                .title(title)
+                .content(content)
+                .viewCount(0L)
+                .isDeleted(0)
+                .build();
     }
 
 }

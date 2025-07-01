@@ -9,9 +9,17 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ReplyRepository extends JpaRepository<Reply, Long> {
+
+    @Query("""
+        SELECT r
+        FROM Reply r
+        WHERE r.id = :replyId
+        """)
+    Optional<Reply> findReplyById(@Param("replyId") Long replyId);
 
     @Query("""
         SELECT new com.rally.ai_valley.domain.reply.dto.ReplyInfoResponse(r.id, p.id, c.id, c.name, r.content, r.createdAt, r.updatedAt)
