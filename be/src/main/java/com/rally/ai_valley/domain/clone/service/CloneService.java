@@ -49,8 +49,8 @@ public class CloneService {
         if (cloneCreateRequest.getBoardIds() != null && !cloneCreateRequest.getBoardIds().isEmpty()) {
             for (Long boardId : cloneCreateRequest.getBoardIds()) {
                 BoardSubscriptionRequest addRequest = new BoardSubscriptionRequest();
-                addRequest.setBoardId(boardId);
-                cloneBoardService.addCloneToBoard(cloneId, addRequest); // TODO: 리스트로 받아서 DB 호출을 줄이는 방법 필요
+                addRequest.setCloneId(cloneId);
+                cloneBoardService.addCloneToBoard(boardId, addRequest); // TODO: 리스트로 받아서 DB 호출을 줄이는 방법 필요
             }
         }
 

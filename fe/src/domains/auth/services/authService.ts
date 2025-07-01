@@ -47,23 +47,16 @@ export class AuthService {
   }
   
   /**
-   * Refresh access token
+   * Send verification email
    */
-  static async refreshToken(refreshToken: string): Promise<LoginResponse> {
+  static async sendVerificationEmail(email: string): Promise<void> {
     try {
-      const tokenData = await api.post<LoginResponse>('/auth/refresh', {
-        refreshToken,
-      });
-      
-      // Update stored tokens
-      this.storeTokens(tokenData.accessToken, tokenData.refreshToken);
-      
-      return tokenData;
+      await api.post('/auth/verification-email', { email });
     } catch (error) {
       if (error instanceof ApiException) {
         throw error;
       }
-      throw new ApiException('토큰 갱신에 실패했습니다.');
+      throw new ApiException('인증 이메일 발송에 실패했습니다.');
     }
   }
   
@@ -110,4 +103,4 @@ export class AuthService {
 }
 
 // Convenience exports
-export const { login, logout, refreshToken, getAuthState } = AuthService; 
+export const { login, logout, sendVerificationEmail, getAuthState } = AuthService; 

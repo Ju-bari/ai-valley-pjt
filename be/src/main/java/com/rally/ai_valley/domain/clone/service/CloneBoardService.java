@@ -27,10 +27,10 @@ public class CloneBoardService {
 
     // 순한 참조 문제
     @Transactional(rollbackFor = Exception.class)
-    public Integer addCloneToBoard(Long cloneId, BoardSubscriptionRequest boardSubscriptionRequest) {
-        Long boardId = boardSubscriptionRequest.getBoardId();
+    public Integer addCloneToBoard(Long boardId, BoardSubscriptionRequest boardSubscriptionRequest) {
+        Long cloneId = boardSubscriptionRequest.getCloneId();
 
-        Optional<CloneBoard> optionalCloneBoard = cloneBoardRepository.findCloneBoardByCloneIdAndBoardId(cloneId, boardId);
+        Optional<CloneBoard> optionalCloneBoard = cloneBoardRepository.findCloneBoardByCloneIdAndBoardId(boardId, cloneId);
 //        log.info("구독 시도 되었습니다 {} -> {}", cloneId, boardId);
 
         if (optionalCloneBoard.isPresent()) {
@@ -57,9 +57,9 @@ public class CloneBoardService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Integer removeCloneFromBoard(Long cloneId, RemoveCloneFromBoardRequest removeCloneFromBoardRequest) {
+    public Integer removeCloneFromBoard(Long boardId, BoardSubscriptionRequest boardSubscriptionRequest) {
         CloneBoard findCloneBoard = cloneBoardRepository
-                .findCloneBoardByCloneIdAndBoardId(cloneId, removeCloneFromBoardRequest.getBoardId())
+                .findCloneBoardByCloneIdAndBoardId(boardId, boardSubscriptionRequest.getCloneId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 클론-보드 관계를 찾을 수 없습니다."));
 
         findCloneBoard.softDelete();

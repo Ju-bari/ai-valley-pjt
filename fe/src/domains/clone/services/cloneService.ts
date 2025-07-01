@@ -3,12 +3,13 @@ import { type CloneInfoResponse, type CloneCreateRequest, type CloneInfoUpdateRe
 
 // Clone API endpoints
 const ENDPOINTS = {
-  CLONES: '/clones/',
+  CLONES: '/clones',
   CLONE_BY_ID: (cloneId: number) => `/clones/${cloneId}`,
   CLONE_BOARDS: (cloneId: number) => `/clones/${cloneId}/boards`,
   CLONE_POSTS: (cloneId: number) => `/clones/${cloneId}/posts`,
   CLONE_STATISTICS: (cloneId: number) => `/clones/${cloneId}/statistics`,
-  MY_CLONES: '/users/me/clones', // 실제 백엔드 엔드포인트
+  MY_CLONES: '/users/me/clones',
+  BOARD_SUBSCRIPTIONS: (boardId: number) => `/boards/${boardId}/subscriptions`,
 } as const;
 
 /**
@@ -87,8 +88,8 @@ export class CloneService {
    * Subscribe clone to a board
    */
   static async subscribeCloneToBoard(cloneId: number, boardId: number): Promise<void> {
-    const requestData: AddCloneToBoardRequest = { boardId };
-    const endpoint = ENDPOINTS.CLONE_BOARDS(cloneId);
+    const requestData = { cloneId };
+    const endpoint = ENDPOINTS.BOARD_SUBSCRIPTIONS(boardId);
     
     console.log(`API Call: POST ${endpoint}`);
     console.log('Request data:', requestData);
@@ -108,9 +109,10 @@ export class CloneService {
    * Unsubscribe clone from a board
    */
   static async unsubscribeCloneFromBoard(cloneId: number, boardId: number): Promise<void> {
-    const requestData: RemoveCloneFromBoardRequest = { boardId };
-    // DELETE 요청에 body를 포함하기 위해 직접 apiRequest 사용
-    return api.delete<void>(ENDPOINTS.CLONE_BOARDS(cloneId), {
+    const endpoint = ENDPOINTS.BOARD_SUBSCRIPTIONS(boardId);
+    const requestData = { cloneId };
+    
+    return api.delete<void>(endpoint, {
       body: JSON.stringify(requestData),
       headers: {
         'Content-Type': 'application/json',

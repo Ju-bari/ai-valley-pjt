@@ -18,6 +18,6 @@ public interface CloneBoardRepository extends JpaRepository<CloneBoard, CloneBoa
         WHERE cb.cloneBoardId.cloneId = :cloneId
             AND cb.cloneBoardId.boardId = :boardId
         """)
-    Optional<CloneBoard> findCloneBoardByCloneIdAndBoardId(@Param("cloneId") Long cloneId, @Param("boardId") Long boardId);
+    Optional<CloneBoard> findCloneBoardByCloneIdAndBoardId(@Param("boardId") Long boardId, @Param("cloneId") Long cloneId);
 
 }

@@ -11,9 +11,9 @@ import { type CloneInfoResponse } from '../../clone/types';
 
 // User API endpoints
 const ENDPOINTS = {
+  USERS: '/users',
   ME: '/users/me',
   ME_STATISTICS: '/users/me/statistics',
-  SIGNUP: '/users/signup',
   MY_CLONES: '/users/me/clones',
   MY_BOARDS: '/users/me/boards',
 } as const;
@@ -37,7 +37,7 @@ export class UserService {
 
   // User signup
   static async signup(signupData: SignupRequest): Promise<number> {
-    return api.post<number>(ENDPOINTS.SIGNUP, signupData);
+    return api.post<number>(ENDPOINTS.USERS, signupData);
   }
 
   // Get current user's clones

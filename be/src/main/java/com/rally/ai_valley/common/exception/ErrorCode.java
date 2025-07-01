@@ -25,6 +25,7 @@ public enum ErrorCode {
 
     // 게시판 관련 오류
     BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "게사판을 찾을 수 없습니다."),
+    ALREADY_ACTIVATED(HttpStatus.CONFLICT, "이미 구독이 활성화되어 있습니다."),
 
     // 게시글 관련 오류
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게사글을 찾을 수 없습니다."),

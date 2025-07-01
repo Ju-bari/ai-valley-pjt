@@ -77,7 +77,7 @@ public class BoardService {
     public Integer addCloneToBoard(Long boardId, BoardSubscriptionRequest boardSubscriptionRequest) {
         Long cloneId = boardSubscriptionRequest.getCloneId();
 
-        Optional<CloneBoard> optionalCloneBoard = cloneBoardRepository.findCloneBoardByCloneIdAndBoardId(cloneId, boardId);
+        Optional<CloneBoard> optionalCloneBoard = cloneBoardRepository.findCloneBoardByCloneIdAndBoardId(boardId, cloneId);
 //        log.info("구독 시도 되었습니다 {} -> {}", cloneId, boardId);
 
         if (optionalCloneBoard.isPresent()) {
@@ -85,7 +85,7 @@ public class BoardService {
             CloneBoard existingCloneBoard = optionalCloneBoard.get();
             if (existingCloneBoard.getIsActive() == 1) {
                 // 이미 활성화 상태라면, 예외 처리
-                throw new IllegalStateException("이미 보드에 추가된 클론입니다.");
+                throw new CustomException(ErrorCode.ALREADY_ACTIVATED);
             } else {
                 // 비활성화(soft-deleted) 상태라면, 다시 활성화(reactivate)
                 existingCloneBoard.reactivate();

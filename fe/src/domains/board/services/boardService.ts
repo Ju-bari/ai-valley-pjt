@@ -3,16 +3,15 @@ import { type Board, type Post, type Comment, type BoardInfoResponse, type PostI
 
 // Board API endpoints
 const ENDPOINTS = {
-  BOARDS: '/boards/',
+  BOARDS: '/boards',
   BOARD_BY_ID: (id: number) => `/boards/${id}`,
-  POSTS: '/posts/',
-  POST_BY_ID: (id: number) => `/posts/${id}`,
-  COMMENTS: '/comments',
-  COMMENT_BY_ID: (id: number) => `/comments/${id}`,
   POSTS_BY_BOARD: (boardId: number) => `/boards/${boardId}/posts`,
-  COMMENTS_BY_POST: (postId: number) => `/posts/${postId}/comments`,
+  CREATE_POST: (boardId: number) => `/boards/${boardId}/posts`,
+  POST_BY_ID: (id: number) => `/posts/${id}`,
   BOARD_CLONES: (id: number) => `/boards/${id}/clones`,
   REPLIES_BY_POST: (postId: number) => `/posts/${postId}/replies`,
+  CREATE_REPLY: (postId: number) => `/posts/${postId}/replies`,
+  REPLY_BY_ID: (replyId: number) => `/replies/${replyId}`,
 } as const;
 
 // Helper function to convert backend response to frontend Board type
@@ -86,10 +85,6 @@ export class BoardService {
   }
 
   // Post operations
-  static async getPosts(): Promise<Post[]> {
-    return api.get<Post[]>(ENDPOINTS.POSTS);
-  }
-
   static async getPostById(id: number): Promise<Post> {
     const postResponse = await api.get<PostDetailResponse>(ENDPOINTS.POST_BY_ID(id));
     return convertPostDetailResponse(postResponse);
@@ -101,32 +96,15 @@ export class BoardService {
   }
 
   static async createPost(request: PostCreateRequest): Promise<PostDetailResponse> {
-    return api.post<PostDetailResponse>(ENDPOINTS.POSTS, request);
+    // Use the new CREATE_POST endpoint that includes boardId in the URL
+    const { boardId, cloneId } = request;
+    return api.post<PostDetailResponse>(ENDPOINTS.CREATE_POST(boardId), { cloneId });
   }
 
-  static async updatePost(id: number, postData: Partial<Post>): Promise<Post> {
-    return api.patch<Post>(ENDPOINTS.POST_BY_ID(id), postData);
-  }
-
-  static async deletePost(id: number): Promise<void> {
-    return api.delete<void>(ENDPOINTS.POST_BY_ID(id));
-  }
-
-  // Comment operations
-  static async getCommentsByPost(postId: number): Promise<Comment[]> {
-    return api.get<Comment[]>(ENDPOINTS.COMMENTS_BY_POST(postId));
-  }
-
-  static async createComment(commentData: Omit<Comment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Comment> {
-    return api.post<Comment>(ENDPOINTS.COMMENTS, commentData);
-  }
-
-  static async updateComment(id: number, commentData: Partial<Comment>): Promise<Comment> {
-    return api.patch<Comment>(ENDPOINTS.COMMENT_BY_ID(id), commentData);
-  }
-
-  static async deleteComment(id: number): Promise<void> {
-    return api.delete<void>(ENDPOINTS.COMMENT_BY_ID(id));
+  // Reply operations (replacing comment operations)
+  static async createReply(postId: number, replyData: { cloneId: number; content: string }): Promise<Reply> {
+    const response = await api.post<Reply>(ENDPOINTS.CREATE_REPLY(postId), replyData);
+    return response;
   }
 
   // Get replies by post ID with new structure
@@ -163,14 +141,8 @@ export const getBoards = BoardService.getBoards;
 export const getBoardById = BoardService.getBoardById;
 export const getBoardDetail = BoardService.getBoardDetail;
 export const getBoardClones = BoardService.getBoardClones;
-export const getPosts = BoardService.getPosts;
 export const getPostById = BoardService.getPostById;
 export const getPostsByBoard = BoardService.getPostsByBoard;
 export const createPost = BoardService.createPost;
-export const updatePost = BoardService.updatePost;
-export const deletePost = BoardService.deletePost;
-export const getCommentsByPost = BoardService.getCommentsByPost;
-export const createComment = BoardService.createComment;
-export const updateComment = BoardService.updateComment;
-export const deleteComment = BoardService.deleteComment;
+export const createReply = BoardService.createReply;
 export const getRepliesByPostId = BoardService.getRepliesByPostId; 
