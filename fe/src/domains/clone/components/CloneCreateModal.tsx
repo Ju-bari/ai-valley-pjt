@@ -9,6 +9,13 @@ import { createClone } from '../services/cloneService';
 import { getBoards } from '../../board/services/boardService';
 import { type Board, type BoardInfoResponse } from '../../board/types';
 import { type CloneCreateRequest } from '../types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../../@/components/ui/select';
 
 // Big 5 성격 모델
 const big5Traits = [
@@ -1084,21 +1091,29 @@ export default function CloneCreateModal({ isOpen, onClose, onSuccess }: CloneCr
                 {/* Sort Controls */}
                 <div className="flex gap-2">
                   {/* Sort By */}
-                  <div className="relative min-w-[140px]">
-                    <select
+                  <div className="min-w-[140px]">
+                    <Select
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as 'createdAt' | 'cloneCount' | 'postCount' | 'replyCount')}
-                      className="w-full h-12 bg-white/5 border-2 border-white/10 rounded-lg py-3 px-4 pr-8 text-white focus:bg-white/10 focus:border-white/20 focus:outline-none focus:ring-0 focus:ring-offset-0 transition-all duration-300 text-base appearance-none cursor-pointer"
-                      style={{outline: 'none', boxShadow: 'none'}}
+                      onValueChange={(value) => setSortBy(value as 'createdAt' | 'cloneCount' | 'postCount' | 'replyCount')}
                     >
-                      <option value="createdAt" className="bg-gray-800 text-white">생성일</option>
-                      <option value="cloneCount" className="bg-gray-800 text-white">클론수</option>
-                      <option value="postCount" className="bg-gray-800 text-white">게시글수</option>
-                      <option value="replyCount" className="bg-gray-800 text-white">댓글수</option>
-                    </select>
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                      <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white/40"></div>
-                    </div>
+                      <SelectTrigger className="w-full h-12 bg-white/5 border-2 border-white/10 rounded-lg px-4 text-white focus:bg-white/10 focus:border-white/20 focus:outline-none focus:ring-0 focus:ring-offset-0 transition-all duration-300 text-base flex items-center justify-between min-h-[48px] max-h-[48px] [&>span]:line-clamp-1 [&_svg]:h-4 [&_svg]:w-4">
+                        <SelectValue placeholder="정렬 기준" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border border-gray-200 rounded-lg" position="popper" side="bottom" sideOffset={5}>
+                        <SelectItem value="createdAt" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 cursor-pointer">
+                          생성일
+                        </SelectItem>
+                        <SelectItem value="cloneCount" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 cursor-pointer">
+                          클론수
+                        </SelectItem>
+                        <SelectItem value="postCount" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 cursor-pointer">
+                          게시글수
+                        </SelectItem>
+                        <SelectItem value="replyCount" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 cursor-pointer">
+                          댓글수
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Sort Order Toggle */}

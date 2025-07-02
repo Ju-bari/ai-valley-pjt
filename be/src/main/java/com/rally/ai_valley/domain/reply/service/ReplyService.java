@@ -1,13 +1,19 @@
 package com.rally.ai_valley.domain.reply.service;
 
+import com.rally.ai_valley.common.ai.service.AiService;
 import com.rally.ai_valley.common.exception.CustomException;
 import com.rally.ai_valley.common.exception.ErrorCode;
+import com.rally.ai_valley.domain.board.entity.Board;
+import com.rally.ai_valley.domain.board.repository.BoardRepository;
 import com.rally.ai_valley.domain.clone.entity.Clone;
 import com.rally.ai_valley.domain.clone.repository.CloneRepository;
+import com.rally.ai_valley.domain.post.dto.PostInfoResponseForAi;
 import com.rally.ai_valley.domain.post.entity.Post;
 import com.rally.ai_valley.domain.post.repository.PostRepository;
+import com.rally.ai_valley.domain.reply.dto.AiReplyCreateResponse;
 import com.rally.ai_valley.domain.reply.dto.ReplyCreateRequest;
 import com.rally.ai_valley.domain.reply.dto.ReplyInfoResponse;
+import com.rally.ai_valley.domain.reply.dto.ReplyInfoResponseForAi;
 import com.rally.ai_valley.domain.reply.entity.Reply;
 import com.rally.ai_valley.domain.reply.repository.ReplyRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +29,10 @@ import java.util.List;
 public class ReplyService {
 
     private final ReplyRepository replyRepository;
+    private final BoardRepository boardRepository;
     private final CloneRepository cloneRepository;
     private final PostRepository postRepository;
+    private final AiService aiService;
 
 
     private Reply getReplyById(Long replyId) {
@@ -32,20 +40,42 @@ public class ReplyService {
                 .orElseThrow(() -> new CustomException(ErrorCode.REPLY_NOT_FOUND));
     }
 
+    // 프록시 객체(getReferenceById) 사용 가능
     @Transactional(rollbackFor = Exception.class)
     public Long createReply(Long postId, ReplyCreateRequest replyCreateRequest) {
-
-        Clone findClone = cloneRepository.findCloneById(replyCreateRequest.getCloneId())
-                .orElseThrow(() -> new CustomException(ErrorCode.CLONE_NOT_FOUND));
         Post findPost = postRepository.findPostById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        Board findBoard = boardRepository.findBoardById(findPost.getBoard().getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND));
+        Clone findClone = cloneRepository.findCloneById(replyCreateRequest.getCloneId())
+                .orElseThrow(() -> new CustomException(ErrorCode.CLONE_NOT_FOUND));
+        List<PostInfoResponseForAi> findPosts = postRepository.findPostsByCloneIdForAi(replyCreateRequest.getCloneId());
+        // TODO: 댓글만 줘야하나, 게시글과 댓글 매핑해서 줘야하나. -> 포스트 중의 댓글을 내 것으로만 가져가던가 vs. 그냥 내 아이디로만 순수하게 댓글 가져오기 -> 우선 내가 쓴 댓글들만 가져오자.
+        List<ReplyInfoResponseForAi> findReplies = replyRepository.findRepliesByCloneIdForAi(postId);
+
 
         Reply findParentReply = null;
         if (replyCreateRequest.getParentReplyId() != null) {
             findParentReply = getReplyById(replyCreateRequest.getParentReplyId());
         }
 
-        Reply createReply = Reply.create(replyCreateRequest, findClone, findPost, findParentReply);
+        // AI 서버에서 생성된 Reply 정보 받기
+        AiReplyCreateResponse aiReplyCreateResponse = aiService.AiCreateReply(
+                findClone.getId(),
+                findClone.getDescription(),
+                findPosts,
+                findReplies,
+                findBoard.getDescription(),
+                findPost.getTitle(),
+                findPost.getContent()
+        );
+
+        // AI가 생성한 내용으로 Reply 생성
+        Reply createReply = Reply.create(aiReplyCreateResponse.getContent(),
+                findClone,
+                findPost,
+                findParentReply);
         replyRepository.save(createReply);
 
         return createReply.getId();

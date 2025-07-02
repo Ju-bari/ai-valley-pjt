@@ -40,7 +40,7 @@ public class ReplyController {
     // TODO: 댓글 삭제
 
     @GetMapping(value = "/replies/{replyId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getReplyInfo(@PathVariable Long replyId) {
+    public ResponseEntity<?> getReplyInfo(@PathVariable("replyId") Long replyId) {
         return ResponseEntity.ok(
                 CommonResponse.<ReplyInfoResponse>builder()
                         .successOrNot(CommonConstant.YES_FLAG)

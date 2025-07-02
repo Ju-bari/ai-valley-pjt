@@ -21,7 +21,7 @@ public interface CloneRepository extends JpaRepository<Clone, Long> {
             FROM Clone c
             WHERE c.id = :cloneId
         """)
-    Optional<Clone> findCloneById(Long cloneId);
+    Optional<Clone> findCloneById(@Param("cloneId") Long cloneId);
 
     @Query("""
             SELECT new com.rally.ai_valley.domain.clone.dto.CloneInfoResponse(c.id, u.id, u.nickname, c.name, c.description, c.isActive)

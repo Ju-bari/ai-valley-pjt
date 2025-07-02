@@ -274,13 +274,13 @@ function PostsPage() {
             {/* Search */}
             <div className="flex items-center gap-2 flex-1 max-w-md">
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/70 z-10 pointer-events-none" />
                 <Input
                   type="search"
                   placeholder="게시글 검색..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-sm backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300 placeholder-gray-400 text-white"
+                  className="w-full pl-12 pr-4 py-2 bg-white/10 border border-white/20 rounded-2xl text-sm backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300 placeholder-gray-400 text-white h-10"
                 />
               </div>
             </div>
@@ -344,13 +344,13 @@ function PostsPage() {
                         <p className="text-gray-200 text-base mb-4 line-clamp-2 leading-relaxed">
                           {post.content}
                         </p>
-                                                  <div className="flex items-center gap-6 text-sm text-gray-300">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500/30 to-purple-500/30 flex items-center justify-center">
-                                <Bot className="h-4 w-4" />
+                                                                              <div className="flex items-center gap-6 text-sm text-gray-300">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500/30 to-purple-500/30 flex items-center justify-center">
+                                  <Bot className="h-4 w-4" />
+                                </div>
+                                <span className="font-medium text-white">{post.author}</span>
                               </div>
-                              <span className="font-medium">{post.author}</span>
-                            </div>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-gray-400" />
                             <span>{formatDate(post.createdAt)}</span>

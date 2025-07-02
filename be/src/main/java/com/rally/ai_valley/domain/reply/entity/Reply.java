@@ -3,7 +3,6 @@ package com.rally.ai_valley.domain.reply.entity;
 import com.rally.ai_valley.common.entity.BaseEntity;
 import com.rally.ai_valley.domain.clone.entity.Clone;
 import com.rally.ai_valley.domain.post.entity.Post;
-import com.rally.ai_valley.domain.reply.dto.ReplyCreateRequest;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,20 +34,20 @@ public class Reply extends BaseEntity {
 //    @OneToMany(mappedBy = "parentReply")
 //    private List<Reply> replies;
 
-    @Column(name = "content", nullable = false)
+    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
 
-//    @Builder.Default
     @Column(name = "is_deleted")
-    private Integer isDeleted = 0;
+    private Integer isDeleted;
 
 
-    public static Reply create(ReplyCreateRequest replyCreateRequest, Clone clone, Post post, Reply parentReply) {
+    public static Reply create(String content, Clone clone, Post post, Reply parentReply) {
         return Reply.builder()
                 .post(post)
                 .clone(clone)
                 .parentReply(parentReply)
-                .content(replyCreateRequest.content)
+                .content(content)
+                .isDeleted(0)
                 .build();
     }
 

@@ -9,6 +9,7 @@ const ENDPOINTS = {
   CREATE_POST: (boardId: number) => `/boards/${boardId}/posts`,
   POST_BY_ID: (id: number) => `/posts/${id}`,
   BOARD_CLONES: (id: number) => `/boards/${id}/clones`,
+  MY_BOARD_CLONES: (id: number) => `/boards/${id}/clones?isMine=true`,
   REPLIES_BY_POST: (postId: number) => `/posts/${postId}/replies`,
   CREATE_REPLY: (postId: number) => `/posts/${postId}/replies`,
   REPLY_BY_ID: (replyId: number) => `/replies/${replyId}`,
@@ -102,15 +103,28 @@ export class BoardService {
   }
 
   // Reply operations (replacing comment operations)
-  static async createReply(postId: number, replyData: { cloneId: number; content: string }): Promise<Reply> {
-    const response = await api.post<Reply>(ENDPOINTS.CREATE_REPLY(postId), replyData);
-    return response;
+  static async createReply(postId: number, replyData: { cloneId: number }): Promise<number> {
+    try {
+      const response = await api.post<number>(
+        ENDPOINTS.CREATE_REPLY(postId), 
+        replyData
+      );
+      return response;
+    } catch (error) {
+      console.error('Error creating reply:', error);
+      throw error;
+    }
   }
 
   // Get replies by post ID with new structure
   static async getRepliesByPostId(postId: number): Promise<Reply[]> {
-    const replies = await api.get<ReplyDetailResponse[]>(ENDPOINTS.REPLIES_BY_POST(postId));
-    return replies.map(BoardService.convertReplyDetailResponseToReply);
+    try {
+      const replies = await api.get<ReplyDetailResponse[]>(ENDPOINTS.REPLIES_BY_POST(postId));
+      return (replies || []).map(BoardService.convertReplyDetailResponseToReply);
+    } catch (error) {
+      console.error('Error fetching replies:', error);
+      return [];
+    }
   }
 
   // Helper function to convert ReplyDetailResponse to Reply
@@ -134,6 +148,19 @@ export class BoardService {
   static async getBoardClones(id: number): Promise<BoardCloneResponse[]> {
     return api.get<BoardCloneResponse[]>(ENDPOINTS.BOARD_CLONES(id));
   }
+
+  // Get my board clones
+  static async getMyBoardClones(id: number): Promise<BoardCloneResponse[]> {
+    try {
+      const response = await api.get<BoardCloneResponse[]>(
+        ENDPOINTS.MY_BOARD_CLONES(id)
+      );
+      return response || [];
+    } catch (error) {
+      console.error('Error fetching my board clones:', error);
+      return [];
+    }
+  }
 }
 
 // Export convenience functions
@@ -141,6 +168,7 @@ export const getBoards = BoardService.getBoards;
 export const getBoardById = BoardService.getBoardById;
 export const getBoardDetail = BoardService.getBoardDetail;
 export const getBoardClones = BoardService.getBoardClones;
+export const getMyBoardClones = BoardService.getMyBoardClones;
 export const getPostById = BoardService.getPostById;
 export const getPostsByBoard = BoardService.getPostsByBoard;
 export const createPost = BoardService.createPost;

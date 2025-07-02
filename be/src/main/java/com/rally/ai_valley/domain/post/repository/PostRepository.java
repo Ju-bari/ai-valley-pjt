@@ -22,26 +22,41 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         """)
     Optional<Post> findPostById(@Param("postId") Long postId);
 
-    @Query("SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(p.id, b.id, c.id, b.name, c.name, p.title, p.content, p.viewCount, p.createdAt, p.updatedAt) " +
-            "FROM Post p " +
-            "JOIN p.board b " +
-            "JOIN p.clone c " +
-            "WHERE p.id = :postId AND p.isDeleted = :isDeleted")
-    PostInfoResponse findPostById(@Param("postId") Long postId, @Param("isDeleted") Integer isDeleted);
+    @Query("""
+            SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(
+                p.id, b.id, c.id, b.name, c.name, p.title, p.content, p.viewCount, p.createdAt, p.updatedAt
+            )
+            FROM Post p
+            JOIN p.board b
+            JOIN p.clone c
+            WHERE p.id = :postId
+                AND p.isDeleted = 0
+        """)
+    PostInfoResponse findPostByPostId(@Param("postId") Long postId);
 
-    @Query("SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(p.id, b.id, c.id, b.name, c.name, p.title, p.content, p.viewCount, p.createdAt, p.updatedAt) " +
-            "FROM Post p " +
-            "JOIN p.board b " +
-            "JOIN p.clone c " +
-            "WHERE b.id = :boardId AND p.isDeleted = :isDeleted")
-    List<PostInfoResponse> findPostsByBoardId(@Param("boardId") Long boardId, @Param("isDeleted") Integer isDeleted);
+    @Query("""
+            SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(
+                p.id, b.id, c.id, b.name, c.name, p.title, p.content, p.viewCount, p.createdAt, p.updatedAt
+            )
+            FROM Post p
+            JOIN p.board b
+            JOIN p.clone c
+            WHERE b.id = :boardId
+                AND p.isDeleted = 0
+        """)
+    List<PostInfoResponse> findPostsByBoardId(@Param("boardId") Long boardId);
 
-    @Query("SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(p.id, b.id, c.id, b.name, c.name, p.title, p.content, p.viewCount, p.createdAt, p.updatedAt) " +
-            "FROM Post p " +
-            "JOIN p.board b " +
-            "JOIN p.clone c " +
-            "WHERE c.id = :cloneId AND p.isDeleted = :isDeleted")
-    List<PostInfoResponse> findPostsByCloneId(@Param("cloneId") Long cloneId, @Param("isDeleted") Integer isDeleted);
+    @Query("""
+            SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponse(
+                p.id, b.id, c.id, b.name, c.name, p.title, p.content, p.viewCount, p.createdAt, p.updatedAt
+            )
+            FROM Post p
+            JOIN p.board b
+            JOIN p.clone c
+            WHERE c.id = :cloneId
+                AND p.isDeleted = 0
+        """)
+    List<PostInfoResponse> findPostsByCloneId(@Param("cloneId") Long cloneId);
 
     @Query("""
            SELECT new com.rally.ai_valley.domain.post.dto.PostInfoResponseForAi(b.name, p.title, p.content)
@@ -49,10 +64,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
            JOIN p.board b
            JOIN p.clone c
            WHERE c.id = :cloneId
-              AND p.isDeleted = :isDeleted
+              AND p.isDeleted = 0
            ORDER BY p.createdAt DESC
            LIMIT 3
            """)
-    List<PostInfoResponseForAi> findPostsByCloneIdForAi(@Param("cloneId") Long cloneId, @Param("isDeleted") Integer isDeleted);
+    List<PostInfoResponseForAi> findPostsByCloneIdForAi(@Param("cloneId") Long cloneId);
 
 }

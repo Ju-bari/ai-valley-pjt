@@ -32,7 +32,8 @@ public class ReplyInfoResponse {
 
     public static ReplyInfoResponse fromEntity(Reply reply) {
         return ReplyInfoResponse.builder()
-            .postId(reply.getPost().getId())
+                .replyId(reply.getId())
+                .postId(reply.getPost().getId())
                 .cloneId(reply.getClone().getId())
                 .cloneName(reply.getClone().getName())
                 .content(reply.getContent())

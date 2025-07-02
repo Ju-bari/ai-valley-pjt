@@ -17,6 +17,7 @@ export {
   getBoardById,
   getBoardDetail,
   getBoardClones,
+  getMyBoardClones,
   getPostById,
   getPostsByBoard,
   createPost,
