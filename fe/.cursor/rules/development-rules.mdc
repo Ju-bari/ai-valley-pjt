@@ -1,0 +1,288 @@
+---
+description: Cursor AI development rules and guidelines for React TypeScript projects with Tailwind CSS 4.0 and shadcn/ui components.
+globs: 
+alwaysApply: false
+---
+# Frontend Development Standards & Guidelines
+## React TypeScript Tailwind CSS 4.0 shadcn/ui Project Rules
+
+You are an expert frontend developer working on a React TypeScript project with Tailwind CSS 4.0 and shadcn/ui. Follow these rules strictly for consistent, high-quality code.
+
+## 🏗️ Project Architecture
+
+### Directory Structure
+- Use domain-driven design (DDD) approach
+- Structure: `src/domains/{domain}/{components|services|types|hooks}/`
+- Shared components: `src/shared/components/ui/`
+- Utilities: `src/lib/utils.ts`, `src/shared/utils/`
+- Never import domain → domain directly, use shared layer
+- Always create `index.ts` for clean re-exports
+
+### File Naming
+- Components: PascalCase (`UserProfile.tsx`)
+- Services: camelCase + Service (`userService.ts`)
+- Hooks: camelCase + use prefix (`useUser.ts`)
+- Types: camelCase (`index.ts`)
+- Directories: kebab-case (`user-profile/`)
+
+## ⚛️ React & TypeScript Rules
+
+### Component Structure
+```tsx
+// Always use function declarations, not arrow functions for components
+import { useState, useEffect } from 'react';
+import { Button } from '../../../shared/components/ui/button';
+
+interface ComponentProps {
+  // Use descriptive prop names with proper types
+  userId: number;
+  onUserUpdate?: (user: User) => void;
+}
+
+export default function UserProfile({ userId, onUserUpdate }: ComponentProps) {
+  // State hooks first
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Effects after state
+  useEffect(() => {
+    // Effect logic
+  }, [userId]);
+  
+  // Event handlers
+  const handleSubmit = async () => {
+    // Handler logic
+  };
+  
+  // Early returns for loading/error states
+  if (loading) return <div>Loading...</div>;
+  
+  // Main render
+  return (
+    <div className="space-y-4">
+      {/* Component content */}
+    </div>
+  );
+}
+```
+
+### TypeScript Best Practices
+- Always define interfaces for props, state, and API responses
+- Use strict typing, avoid `any`
+- Prefer `type` for unions, `interface` for objects
+- Use proper generic constraints
+- Export types from domain `types/index.ts`
+
+```tsx
+// Good type definitions
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
+type UserRole = 'admin' | 'user' | 'moderator';
+
+interface ApiResponse<T> {
+  data: T;
+  message: string;
+  status: number;
+}
+```
+
+## 🎨 Tailwind CSS 4.0 Rules
+
+### Class Organization
+- Use Tailwind classes in logical order: layout → positioning → sizing → styling → effects
+- Group related classes together
+- Use meaningful utility combinations
+
+```tsx
+// Good class organization
+<div className="flex items-center justify-between w-full p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+```
+
+### Responsive Design
+- Mobile-first approach
+- Use standard breakpoints: `sm:`, `md:`, `lg:`, `xl:`, `2xl:`
+- Group responsive variants logically
+
+```tsx
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+```
+
+### Custom Styles
+- Prefer Tailwind utilities over custom CSS
+- Use `className` composition for reusable patterns
+- Create utility functions in `src/lib/utils.ts` for complex combinations
+
+```tsx
+// Utils function for consistent styling
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+// Usage
+<div className={cn("base-styles", isActive && "active-styles", className)}>
+```
+
+## 🧩 shadcn/ui Integration
+
+### Component Usage
+- Always use shadcn/ui components from `@/components/ui/`
+- Customize through className prop, not direct style modifications
+- Maintain consistent design tokens
+
+```tsx
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+
+// Good usage
+<Button 
+  variant="outline" 
+  size="lg"
+  className="bg-blue-500 hover:bg-blue-600"
+>
+  Submit
+</Button>
+```
+
+### Form Handling
+- Use shadcn/ui form components with react-hook-form
+- Implement proper validation with zod
+- Handle loading and error states consistently
+
+```tsx
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const formSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+
+type FormData = z.infer<typeof formSchema>;
+```
+
+## 🔄 State Management
+
+### Local State
+- Use `useState` for simple state
+- Use `useReducer` for complex state logic
+- Implement proper loading and error states
+
+### Server State
+- Consider React Query/SWR for server state management
+- Implement proper error boundaries
+- Handle optimistic updates when appropriate
+
+### Global State
+- Use context for app-wide state (theme, auth)
+- Consider Zustand for complex global state
+- Keep global state minimal
+
+## 📡 API Integration
+
+### Service Layer
+```tsx
+// Domain service structure
+import { api } from '../../../shared/utils/api';
+import type { User, CreateUserRequest } from '../types';
+
+export const userService = {
+  getById: async (id: number): Promise<User> => {
+    const response = await api.get(`/api/v1/users/${id}`);
+    return response;
+  },
+  
+  create: async (data: CreateUserRequest): Promise<User> => {
+    const response = await api.post('/api/v1/users', data);
+    return response;
+  },
+};
+```
+
+### Error Handling
+- Implement consistent error handling patterns
+- Use try-catch blocks in async functions
+- Provide meaningful user feedback
+
+## 🎯 Performance & Best Practices
+
+### React Optimization
+- Use `React.memo` for expensive components
+- Implement proper key props for lists
+- Avoid inline functions in render
+- Use `useCallback` and `useMemo` judiciously
+
+### Code Organization
+- Keep components focused and single-purpose
+- Extract custom hooks for reusable logic
+- Use composition over inheritance
+- Implement proper separation of concerns
+
+### Accessibility
+- Use semantic HTML elements
+- Implement proper ARIA attributes
+- Ensure keyboard navigation
+- Maintain proper color contrast
+
+## 📦 Import Organization
+
+```tsx
+// 1. React and core libraries
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+
+// 2. External libraries
+import { z } from 'zod';
+import { toast } from 'sonner';
+
+// 3. shadcn/ui components
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+
+// 4. Shared utilities and components
+import { cn } from '@/lib/utils';
+import { Layout } from '../../../shared/components/Layout';
+
+// 5. Domain-specific imports
+import { userService } from '../services/userService';
+import type { User } from '../types';
+```
+
+## 🚫 Anti-patterns to Avoid
+
+- Don't use `any` type unless absolutely necessary
+- Don't create circular dependencies between domains
+- Don't put domain-specific logic in shared components
+- Don't use inline styles, prefer Tailwind classes
+- Don't ignore TypeScript warnings
+- Don't create overly nested component structures
+- Don't forget to handle loading and error states
+- Don't use `console.log` in production code
+
+## ✅ Code Quality Checklist
+
+Before submitting code, ensure:
+- [ ] TypeScript compiles without errors
+- [ ] All props and state have proper types
+- [ ] Components are properly tested
+- [ ] Accessibility requirements are met
+- [ ] Performance considerations are addressed
+- [ ] Error handling is implemented
+- [ ] Code follows the established patterns
+- [ ] Imports are organized correctly
+- [ ] No unused variables or imports
+
+## 🎨 Design System Consistency
+
+- Use consistent spacing scale (4, 8, 12, 16, 20, 24, 32, 40, 48, 64px)
+- Maintain color palette consistency
+- Use standard typography scale
+- Implement consistent interaction patterns
+- Follow established component variants
+
+Remember: Write code that is readable, maintainable, and follows the established patterns. When in doubt, favor consistency with existing codebase patterns. 

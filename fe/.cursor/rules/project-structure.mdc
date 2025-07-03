@@ -1,0 +1,276 @@
+---
+description: when deciding where to create new files/folders or how to import modules from other parts of the codebase.
+globs: 
+alwaysApply: false
+---
+# 디렉토리 구조 전략 및 규칙
+
+## 📁 전체 구조 개요
+
+본 프로젝트는 **도메인 기반 설계(Domain-Driven Design)** 와 **기능별 분리(Feature-based)** 원칙을 따릅니다.
+
+```
+src/
+├── domains/           # 비즈니스 도메인별 분리
+│   ├── auth/         # 인증/인가 도메인
+│   ├── board/        # 게시판 도메인
+│   ├── clone/        # AI 클론 도메인
+│   ├── home/         # 홈페이지 도메인
+│   └── user/         # 사용자 도메인
+├── shared/           # 공통 모듈
+├── lib/             # 외부 라이브러리 설정
+├── assets/          # 정적 자원
+└── main.tsx         # 앱 엔트리포인트
+```
+
+## 🎯 핵심 원칙
+
+### 1. 도메인 우선 (Domain First)
+- 비즈니스 로직에 따라 도메인을 분리
+- 각 도메인은 독립적으로 개발/배포 가능
+- 도메인 간 의존성 최소화
+
+### 2. 계층화 (Layered Architecture)
+- Presentation Layer: `components/`
+- Business Layer: `services/`, `hooks/`
+- Data Layer: `types/`, API 클라이언트
+
+### 3. 재사용성 극대화
+- 공통 컴포넌트는 `shared/`에 위치
+- 도메인별 특화 로직은 해당 도메인 내부에만
+
+## 📂 도메인 구조 규칙
+
+### 필수 디렉토리
+
+각 도메인은 다음 구조를 **반드시** 포함해야 합니다:
+
+```
+domains/{domain-name}/
+├── components/       # React 컴포넌트
+├── services/        # API 호출 및 비즈니스 로직
+├── types/          # TypeScript 타입 정의
+└── index.ts        # 도메인 진입점 (re-export)
+```
+
+### 선택적 디렉토리
+
+필요에 따라 추가할 수 있는 디렉토리:
+
+```
+domains/{domain-name}/
+├── hooks/          # 커스텀 React 훅
+├── utils/          # 도메인별 유틸리티 함수
+├── constants/      # 도메인별 상수
+├── stores/         # 상태 관리 (Zustand, Redux 등)
+└── validators/     # 폼 검증 로직
+```
+
+## 🔄 의존성 규칙
+
+### ✅ 허용되는 의존성
+
+1. **도메인 → Shared**: 항상 허용
+   ```typescript
+   // ✅ Good
+   import { Button } from '../../../shared/components/ui/button';
+   ```
+
+2. **도메인 → Lib**: 항상 허용
+   ```typescript
+   // ✅ Good
+   import { cn } from '../../../lib/utils';
+   ```
+
+3. **Shared → Lib**: 항상 허용
+
+### ❌ 금지되는 의존성
+
+1. **도메인 → 다른 도메인**: 직접 의존 금지
+   ```typescript
+   // ❌ Bad
+   import { UserService } from '../../user/services/userService';
+   
+   // ✅ Good - shared를 통해 간접 참조
+   import { UserService } from '../../../shared/services';
+   ```
+
+2. **Shared → 도메인**: 역방향 의존성 금지
+   ```typescript
+   // ❌ Bad
+   import { BoardTypes } from '../../domains/board/types';
+   ```
+
+## 📋 네이밍 규칙
+
+### 파일명 규칙
+
+| 타입 | 규칙 | 예시 |
+|------|------|------|
+| 컴포넌트 | PascalCase | `UserProfile.tsx` |
+| 서비스 | camelCase + Service | `userService.ts` |
+| 훅 | camelCase + use 접두사 | `useUser.ts` |
+| 타입 | camelCase | `index.ts` |
+| 유틸리티 | camelCase | `formatDate.ts` |
+| 상수 | camelCase | `constants.ts` |
+
+### 디렉토리명 규칙
+
+| 타입 | 규칙 | 예시 |
+|------|------|------|
+| 도메인 | kebab-case (단수형) | `user`, `board`, `clone` |
+| 기능 디렉토리 | kebab-case (복수형) | `components`, `services` |
+
+## 🗂️ 파일 구성 템플릿
+
+### 도메인 index.ts
+
+```typescript
+// domains/{domain}/index.ts
+export * from './components';
+export * from './services';
+export * from './types';
+export * from './hooks';
+```
+
+### 서비스 파일
+
+```typescript
+// domains/{domain}/services/{domain}Service.ts
+import { api } from '../../../shared/utils/api';
+import type { CreateRequest, InfoResponse } from '../types';
+
+export const get{Domain}ById = async (id: number): Promise<InfoResponse> => {
+  const response = await api.get(`/api/v1/{domain}s/${id}`);
+  return response;
+};
+
+export const create{Domain} = async (data: CreateRequest): Promise<void> => {
+  await api.post('/api/v1/{domain}s', data);
+};
+```
+
+### 컴포넌트 파일
+
+```typescript
+// domains/{domain}/components/{Component}.tsx
+import { useState, useEffect } from 'react';
+import { Button } from '../../../shared/components/ui/button';
+import { get{Domain}ById } from '../services/{domain}Service';
+import type { InfoResponse } from '../types';
+
+interface {Component}Props {
+  id: number;
+}
+
+export default function {Component}({ id }: {Component}Props) {
+  // Component logic
+}
+```
+
+## 🔧 개발 가이드라인
+
+### 1. 새 도메인 추가 시
+
+1. 도메인 디렉토리 생성
+2. 필수 하위 디렉토리 생성 (`components`, `services`, `types`)
+3. `index.ts` 파일 생성
+4. 라우팅에 도메인 추가
+
+### 2. 컴포넌트 분리 기준
+
+#### 도메인 컴포넌트 (domains/{domain}/components/)
+- 해당 도메인에서만 사용
+- 도메인별 비즈니스 로직 포함
+- 예: `PostDetailPage.tsx`, `CloneCreateModal.tsx`
+
+#### 공통 컴포넌트 (shared/components/)
+- 여러 도메인에서 재사용
+- 순수한 UI 컴포넌트
+- 예: `Button.tsx`, `Modal.tsx`, `Layout.tsx`
+
+### 3. 상태 관리 전략
+
+```typescript
+// 로컬 상태: useState, useReducer
+const [data, setData] = useState();
+
+// 서버 상태: React Query, SWR
+const { data, loading } = useQuery(['user', id], () => getUserById(id));
+
+// 전역 상태: Zustand, Redux (shared/stores/)
+const { user, setUser } = useUserStore();
+```
+
+## 📦 Import 순서 규칙
+
+```typescript
+// 1. React 관련
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+// 2. 외부 라이브러리
+import { z } from 'zod';
+
+// 3. 절대 경로 imports (shared, lib)
+import { Button } from '../../../shared/components/ui/button';
+import { cn } from '../../../lib/utils';
+
+// 4. 상대 경로 imports (같은 도메인 내)
+import { getUserById } from '../services/userService';
+import type { User } from '../types';
+```
+
+## 🚀 확장성 고려사항
+
+### Micro-Frontend 준비
+- 각 도메인은 독립적인 번들링 가능
+- 도메인별 팀 분업 용이
+- 점진적 마이그레이션 지원
+
+### 성능 최적화
+- 도메인별 코드 스플리팅
+- 지연 로딩 (React.lazy)
+- 트리 쉐이킹 최적화
+
+## ⚠️ 안티패턴
+
+### 피해야 할 구조
+
+```typescript
+// ❌ Bad: 순환 의존성
+domains/user/services/userService.ts → domains/board/services/boardService.ts
+domains/board/services/boardService.ts → domains/user/services/userService.ts
+
+// ❌ Bad: shared에 도메인별 로직
+shared/components/UserSpecificComponent.tsx
+
+// ❌ Bad: 깊은 중첩
+domains/user/components/profile/details/personal/BasicInfo.tsx
+```
+
+### 권장 해결책
+
+```typescript
+// ✅ Good: shared를 통한 의존성 관리
+shared/services/apiService.ts ← 공통 API 로직
+domains/user/services/userService.ts ← 사용자별 로직만
+domains/board/services/boardService.ts ← 게시판별 로직만
+
+// ✅ Good: 컴포넌트 합성
+domains/user/components/UserProfile.tsx
+├── PersonalInfo.tsx
+├── ContactInfo.tsx
+└── PreferenceSettings.tsx
+```
+
+## 📋 체크리스트
+
+새 기능 개발 시 확인사항:
+
+- [ ] 올바른 도메인에 위치하는가?
+- [ ] 의존성 규칙을 준수하는가?
+- [ ] 네이밍 규칙을 따르는가?
+- [ ] index.ts에 export를 추가했는가?
+- [ ] 타입 정의를 포함했는가?
+- [ ] 재사용 가능한 부분을 shared로 분리했는가?

@@ -1,0 +1,33 @@
+---
+description: 
+globs: *.tsx
+alwaysApply: false
+---
+You are an expert React TypeScript developer. Always use:
+
+- **React 19** with TypeScript for all components
+- **Tailwind CSS 4.0** for styling (never use inline styles or CSS modules)
+- **shadcn/ui** components from `@/components/ui/` when available
+- **Function declarations** for components (not arrow functions)
+- **Proper TypeScript interfaces** for all props and data
+
+Example component structure:
+```tsx
+import { Button } from '@/components/ui/button';
+
+interface ComponentProps {
+  title: string;
+  onClick?: () => void;
+}
+
+export default function MyComponent({ title, onClick }: ComponentProps) {
+  return (
+    <div className="flex items-center gap-4 p-4 bg-white rounded-lg border">
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <Button onClick={onClick}>Click me</Button>
+    </div>
+  );
+}
+```
+
+Always prioritize: Type safety, Tailwind utilities, shadcn/ui components, clean code structure. 
