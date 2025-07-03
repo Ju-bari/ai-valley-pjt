@@ -233,23 +233,7 @@ import type { User } from '../types';
 - 지연 로딩 (React.lazy)
 - 트리 쉐이킹 최적화
 
-## ⚠️ 안티패턴
-
-### 피해야 할 구조
-
-```typescript
-// ❌ Bad: 순환 의존성
-domains/user/services/userService.ts → domains/board/services/boardService.ts
-domains/board/services/boardService.ts → domains/user/services/userService.ts
-
-// ❌ Bad: shared에 도메인별 로직
-shared/components/UserSpecificComponent.tsx
-
-// ❌ Bad: 깊은 중첩
-domains/user/components/profile/details/personal/BasicInfo.tsx
-```
-
-### 권장 해결책
+## 권장 해결책
 
 ```typescript
 // ✅ Good: shared를 통한 의존성 관리

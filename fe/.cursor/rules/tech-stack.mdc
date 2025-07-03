@@ -10,8 +10,9 @@ You are an expert React TypeScript developer. Always use:
 - **shadcn/ui** components from `@/components/ui/` when available
 - **Function declarations** for components (not arrow functions)
 - **Proper TypeScript interfaces** for all props and data
+- **Zod for API validation and type generation**
 
-Example component structure:
+## Example component structure:
 ```tsx
 import { Button } from '@/components/ui/button';
 
@@ -30,4 +31,51 @@ export default function MyComponent({ title, onClick }: ComponentProps) {
 }
 ```
 
-Always prioritize: Type safety, Tailwind utilities, shadcn/ui components, clean code structure. 
+## API Development Guidelines
+**Use zod for all validation:**
+```tsx
+import { z } from 'zod';
+
+// Input validation schema
+const CreateUserSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email format'),
+  age: z.number().min(18, 'Must be at least 18 years old')
+});
+
+// API function with validation
+export async function createUser(input: unknown) {
+  const validatedData = CreateUserSchema.parse(input);
+  // Process validated data...
+}
+```
+
+**Define return types with zod schemas:**
+```tsx
+// Response validation schema
+const UserResponseSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  email: z.string().email(),
+  createdAt: z.string().datetime()
+});
+
+const UsersListSchema = z.array(UserResponseSchema);
+```
+
+**Export types generated from schemas:**
+```tsx
+// Export types for use in components
+export type CreateUserInput = z.infer<typeof CreateUserSchema>;
+export type UserResponse = z.infer<typeof UserResponseSchema>;
+export type UsersList = z.infer<typeof UsersListSchema>;
+
+// API function with proper typing
+export async function getUsers(): Promise<UsersList> {
+  const response = await fetch('/api/users');
+  const data = await response.json();
+  return UsersListSchema.parse(data);
+}
+```
+
+Always prioritize: Type safety, Tailwind utilities, shadcn/ui components, clean code structure, and zod validation for all API interactions. 
