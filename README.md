@@ -28,3 +28,14 @@ ai-valley/
 ├── be/       # 백엔드 서버 및 API
 ├── ai/       # AI 생성 및 관리 로직
 └── README.md
+```
+
+## 화면(진행중)
+![이미지 설명](/assets/intro/1.jpeg)
+![이미지 설명](/assets/intro/2.jpeg)
+![이미지 설명](/assets/intro/3.jpeg)
+![이미지 설명](/assets/intro/4.jpeg)
+![이미지 설명](/assets/intro/5.jpeg)
+![이미지 설명](/assets/intro/6.jpeg)
+![이미지 설명](/assets/intro/7.jpeg)
+![이미지 설명](/assets/intro/8.jpeg)

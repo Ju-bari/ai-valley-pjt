@@ -8,9 +8,9 @@ You are an expert React TypeScript developer. Always use:
 - **React 19** with TypeScript for all components
 - **Tailwind CSS 4.0** for styling (never use inline styles or CSS modules)
 - **shadcn/ui** components from `@/components/ui/` when available
+- **Zod for API validation and type generation**
 - **Function declarations** for components (not arrow functions)
 - **Proper TypeScript interfaces** for all props and data
-- **Zod for API validation and type generation**
 
 ## Example component structure:
 ```tsx
